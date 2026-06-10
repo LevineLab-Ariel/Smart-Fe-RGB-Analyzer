@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Fe-RGB Analyzer (Academic Supporting Tool)</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f1f5f9; margin: 0; padding: 10px; color: #1e293b;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .container {
+            max-width: 500px; width: 100%; background: #ffffff; padding: 15px;
+            border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); box-sizing: border-box;
+        }
+        h2 {
+            font-size: 15px; text-align: center; color: #1e3a8a; margin: 0 0 15px 0;
+            text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;
+        }
+        .section-box {
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin-bottom: 15px;
+        }
+        .section-title {
+            font-size: 13px; font-weight: bold; color: #334155; margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .step-badge { background: #3b82f6; color: white; padding: 2px 7px; border-radius: 4px; font-size: 11px; }
+        .canvas-wrapper {
+            position: relative; width: 100%; height: 280px; background: #0f172a;
+            border-radius: 8px; overflow: hidden; margin-bottom: 12px; cursor: grab; border: 1px solid #cbd5e1; touch-action: none; 
+        }
+        canvas { position: absolute; left: 0; top: 0; }
+        .hud-overlay {
+            position: absolute; top: 50%; left: 50%; width: 60px; height: 60px;
+            transform: translate(-50%, -50%); border: 2px dashed #ef4444; pointer-events: none;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.25);
+        }
+        .hud-center { position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: #ef4444; border-radius: 50%; transform: translate(-50%, -50%); }
+        .btn-main {
+            background: #2563eb; color: white; border: none; padding: 11px; border-radius: 8px;
+            font-size: 13px; font-weight: 600; cursor: pointer; width: 100%; display: flex; justify-content: center; gap: 8px;
+            transition: all 0.2s ease; box-sizing: border-box;
+        }
+        .btn-main:active { background: #1d4ed8; }
+        .btn-secondary {
+            background: #475569; color: white; border: none; padding: 6px 10px; border-radius: 5px; font-size: 11px; cursor: pointer; min-width: 85px;
+            transition: all 0.2s ease;
+        }
+        .input-inline { width: 65px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; font-size: 12px; }
+        
+        .telemetry {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; 
+            background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 12px;
+            border: 1px solid #e2e8f0; transition: all 0.3s ease;
+        }
+        .telemetry-header { font-size: 14px; font-weight: 800; color: #0f172a; }
+        .telemetry-subheader { font-size: 11px; font-weight: normal; color: #64748b; margin-top: 2px; }
+        
+        .calib-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 6px 0; border-bottom: 1px dashed #e2e8f0; }
+        .locked { opacity: 0.35; pointer-events: none; }
+        .ui-disabled { opacity: 0.25 !important; pointer-events: none !important; cursor: not-allowed !important; }
+        
+        .result-box { background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px; border-radius: 6px; margin-top: 10px; transition: all 0.3s ease; }
+        .result-box.out-of-range { background: #fffbeb !important; border-left: 4px solid #d97706 !important; }
+        
+        .slot-pill { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; margin-left: 3px; }
+        .slot-filled { background: #10b981 !important; }
+        .btn-sm-danger { background: #dc2626; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+        .btn-sm-success { background: #10b981; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+        
+        .alert-active { background: #fee2e2 !important; border: 1px solid #f87171 !important; animation: pulse 1.5s infinite; }
+        .alert-active .telemetry-header { color: #991b1b !important; }
+        .alert-active .telemetry-subheader { color: #ef4444 !important; font-weight: bold; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
+
+        .qc-warning-text { color: #b45309; font-size: 11px; font-weight: bold; margin-top: 4px; display: none; }
+        
+        .academic-disclaimer {
+            font-size: 10px; color: #64748b; text-align: justify; margin-top: 20px;
+            padding-top: 10px; border-top: 1px solid #e2e8f0; line-height: 1.4;
+        }
+
+        .export-btn-group {
+            display: flex; flex-direction: column; gap: 6px; margin-top: 12px;
+        }
+        .export-row-top {
+            display: flex; justify-content: space-between; gap: 6px; align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Smart Fe-RGB Analyzer</h2>
+
+    <div class="canvas-wrapper" id="canvasContainer">
+        <canvas id="imageCanvas"></canvas>
+        <div class="hud-overlay" id="hudOverlayBox"><div class="hud-center"></div></div>
+        <div id="loaderPlaceholder" style="position: absolute; width: 100%; text-align: center; top: 45%; color: #94a3b8; font-size: 12px;">
+            📸 Upload image. Pinch to zoom, drag center to crosshair.
+        </div>
+    </div>
+
+    <div class="telemetry" id="telemetryBox">
+        <div>
+            <div class="telemetry-header">RGB: <span id="liveRGB">-, -, -</span></div>
+            <div class="telemetry-subheader"><span id="rgbLabelPrefix">±SD:</span> <span id="liveRGB_SD">-, -, -</span></div>
+        </div>
+        <div style="border-left: 1px dashed #cbd5e1; padding-left: 12px;">
+            <div class="telemetry-header">Gray (Y): <span id="liveGray" style="color:#2563eb;">-</span></div>
+            <div class="telemetry-subheader"><span id="grayLabelPrefix">±SD:</span> <span id="liveGray_SD">-</span></div>
+        </div>
+    </div>
+
+    <input type="file" id="calibImageLoader" accept="image/*" style="display: none;" />
+    <input type="file" id="sampleImageLoader" accept="image/*" style="display: none;" />
+
+    <div class="section-box">
+        <div class="section-title">
+            <span>1. Calibration Rig (n=3 Mode)</span>
+            <span class="step-badge">Step 1</span>
+        </div>
+        
+        <div style="margin-bottom: 12px;">
+            <button class="btn-main" style="background:#2563eb;" onclick="document.getElementById('calibImageLoader').click();">
+                📁 Load Calibration Standard Image
+            </button>
+        </div>
+
+        <div class="calib-row">
+            <div>
+                <b>P1 (Low Std.)</b> Conc: <input type="number" id="c1" class="input-inline" value="2.40" step="0.01"> mM
+                <div style="margin-top:2px;">
+                    <span class="slot-pill" id="p1_s1"></span><span class="slot-pill" id="p1_s2"></span><span class="slot-pill" id="p1_s3"></span>
+                </div>
+            </div>
+            <button class="btn-secondary" id="btnAnchorP1" onclick="logTriplePoint(1)">Anchor P1</button>
+        </div>
+        <div style="font-size: 11px; color: #64748b; margin-bottom: 2px;" id="p1Summary">Mean Gray: Waiting for 3 replications...</div>
+        <div class="qc-warning-text" id="p1QCWarning">⚠️ High variance alert among replicates! Check illumination.</div>
+
+        <div class="calib-row" style="margin-top: 10px;">
+            <div>
+                <b>P2 (High Std.)</b> Conc: <input type="number" id="c2" class="input-inline" value="7.50" step="0.01"> mM
+                <div style="margin-top:2px;">
+                    <span class="slot-pill" id="p2_s1"></span><span class="slot-pill" id="p2_s2"></span><span class="slot-pill" id="p2_s3"></span>
+                </div>
+            </div>
+            <button class="btn-secondary" id="btnAnchorP2" onclick="logTriplePoint(2)">Anchor P2</button>
+        </div>
+        <div style="font-size: 11px; color: #64748b; margin-bottom: 2px;" id="p2Summary">Mean Gray: Waiting for 3 replications...</div>
+        <div class="qc-warning-text" id="p2QCWarning">⚠️ High variance alert among replicates! Check illumination.</div>
+
+        <button class="btn-main" id="btnFitCurve" style="background:#10b981; margin-top:12px;" onclick="generateLinearModel()">
+            🔄 Fit Robust Calibration Curve
+        </button>
+        <div style="font-size: 11px; color: #059669; font-weight: bold; text-align: center; margin-top: 6px;" id="modelStatus">
+            Status: Awaiting Replicate Statistics (Testing Locked)
+        </div>
+    </div>
+
+    <div class="section-box locked" id="step2Box">
+        <div class="section-title">
+            <span>2. Smart Target Sample Assay</span>
+            <span class="step-badge" style="background:#10b981;">Step 2</span>
+        </div>
+        
+        <div style="margin-bottom: 10px;">
+            <button class="btn-main" style="background:#4f46e5;" onclick="document.getElementById('sampleImageLoader').click();">
+                📷 Load Current Target Sample Image
+            </button>
+        </div>
+
+        <div style="display: flex; gap: 6px; margin-bottom: 10px; align-items: stretch;">
+            <button class="btn-main" id="btnQuantify" style="background:#059669; flex: 2; padding: 8px;" onclick="evaluateUnknownSample()">
+                🔬 Quantify Spot
+            </button>
+            <button class="btn-sm-success" style="flex: 1; font-weight: bold;" id="btnArchive" onclick="archiveCurrentConcentrationGroup()">
+                💾 Store Group
+            </button>
+            <button class="btn-sm-danger" style="flex: 1;" onclick="resetSampleCounter()" title="Discard current group only">
+                🔄 Reset
+            </button>
+        </div>
+
+        <div class="result-box" id="resultUIBox">
+            <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                <span>Assay Status:</span>
+                <span id="assayModeBadge" style="font-weight: bold; color: #2563eb;">Single Screening (n=0)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: bold; margin-top: 10px; border-top: 1px dashed #cbd5e1; padding-top: 10px; color: #b91c1c;">
+                <span id="resultLabel">Estimated [Fe³⁺]:</span>
+                <span id="finalConcentration">- mM</span>
+            </div>
+            <div style="font-size: 11px; color: #64748b; text-align: left; margin-top: 6px;" id="sampleRawHistory">
+                History Calculated Concentrations: None
+            </div>
+        </div>
+
+        <div class="export-btn-group">
+            <div class="export-row-top">
+                <button class="btn-main" style="background:#0f172a; font-size:11px; padding:7px; flex: 3; margin:0;" onclick="exportCompleteDatasets()">
+                    📋 Copy Tabular Text (Origin Ready)
+                </button>
+                <button class="btn-sm-danger" style="background: #94a3b8; padding: 7px 10px; font-size: 10px; flex: 1; height: 100%;" onclick="clearMasterDatabase()" title="Wipe out all exported logs but keep calibration parameters">
+                    🗑️ Wipe Logs
+                </button>
+            </div>
+            <button class="btn-main" style="background:#16a34a; font-size:12px; padding:9px; margin-top: 2px;" onclick="exportToExcelFile()">
+                📊 Download Professional Excel (.xlsx)
+            </button>
+        </div>
+    </div>
+
+    <div class="academic-disclaimer">
+        <b>Notice & Methodology Scope:</b> This browser-based application functions strictly as a <b>semi-quantitative analyzer</b> designed for the localized estimation of total iron ions via recorded RGB colorimetric values. It is optimized as a lightweight supporting tool for rapid point-of-care screen monitoring. For absolute certified analytical precision and full empirical quantification, high-tier validated laboratory instrumentation (e.g., ICP-MS, Atomic Absorption Spectroscopy) remains strongly recommended.
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('imageCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('canvasContainer');
+    const calibImageLoader = document.getElementById('calibImageLoader');
+    const sampleImageLoader = document.getElementById('sampleImageLoader');
+    const placeholder = document.getElementById('loaderPlaceholder');
+
+    let img = new Image();
+    let imgLoaded = false;
+    let imgScale = 1, imgX = 0, imgY = 0;
+    let isDragging = false;
+    let dragStartX = 0, dragStartY = 0;
+    let lastPinchDist = 0;
+
+    let p1Replicates = []; let p2Replicates = [];
+    let p1Final = null, p2Final = null;
+    let modelK = null, modelB = null;
+
+    let targetSampleConcentrations = []; 
+    let currentGroupTelemetryHistory = []; // 用于暂存当前组内的所有像素通道快照，点击Store时再合流大数据库
+    let isAreaInvalid = false; 
+    const roiSize = 60;
+
+    // 已归档的历史记录计数器
+    let archivedGroupCounter = 0;
+
+    // --- Master Data Memory Struct for Excel Export ---
+    let masterAnalyticalLog = [];
+    // 专门保存每个 Group 汇总统计（Mean, SD）的大数据库
+    let masterGroupSummaryLog = [];
+
+    // Storage references for latest calculated live parameters
+    let activeTelemetrySnapshot = null;
+
+    calibImageLoader.addEventListener('change', (e) => { if(e.target.files[0]) executeImageLoading(e.target.files[0]); }, false);
+    sampleImageLoader.addEventListener('change', (e) => { if(e.target.files[0]) executeImageLoading(e.target.files[0]); }, false);
+
+    function executeImageLoading(fileObject) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            img = new Image();
+            img.onload = function() {
+                placeholder.style.display = 'none';
+                imgLoaded = true;
+                imgScale = 400 / img.width;
+                imgX = (container.clientWidth - img.width * imgScale) / 2;
+                imgY = (container.clientHeight - img.height * imgScale) / 2;
+                render();
+            }
+            img.src = event.target.result;
+        }
+        if(fileObject) reader.readAsDataURL(fileObject);
+    }
+
+    function render() {
+        if (!imgLoaded) return;
+        canvas.width = container.clientWidth; canvas.height = container.clientHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, imgX, imgY, img.width * imgScale, img.height * imgScale);
+        processLivePixels();
+    }
+
+    function processLivePixels() {
+        const centerX = canvas.width / 2; const centerY = canvas.height / 2;
+        const startROI_X = centerX - roiSize / 2; const startROI_Y = centerY - roiSize / 2;
+        try {
+            const imgData = ctx.getImageData(startROI_X, startROI_Y, roiSize, roiSize);
+            const data = imgData.data;
+            const totalPixels = roiSize * roiSize;
+
+            let rSum = 0, gSum = 0, bSum = 0, graySum = 0;
+            let rValues = [], gValues = [], bValues = [], grayValues = [];
+
+            for (let i = 0; i < data.length; i += 4) {
+                let r = data[i]; let g = data[i+1]; let b = data[i+2];
+                let y = (r + g + b) / 3;
+                rSum += r; gSum += g; bSum += b; graySum += y;
+                rValues.push(r); gValues.push(g); bValues.push(b); grayValues.push(y);
+            }
+
+            const avgRNum = rSum / totalPixels; const avgGNum = gSum / totalPixels;
+            const avgBNum = bSum / totalPixels; const avgGrayNum = graySum / totalPixels;
+
+            let rVarSum = 0, gVarSum = 0, bVarSum = 0, grayVarSum = 0;
+            for (let j = 0; j < totalPixels; j++) {
+                rVarSum += Math.pow(rValues[j] - avgRNum, 2);
+                gVarSum += Math.pow(gValues[j] - avgGNum, 2);
+                bVarSum += Math.pow(bValues[j] - avgBNum, 2);
+                grayVarSum += Math.pow(grayValues[j] - avgGrayNum, 2);
+            }
+
+            const sdR = Math.sqrt(rVarSum / (totalPixels - 1));
+            const sdG = Math.sqrt(gVarSum / (totalPixels - 1));
+            const sdB = Math.sqrt(bVarSum / (totalPixels - 1));
+            const sdGray = Math.sqrt(grayVarSum / (totalPixels - 1));
+
+            document.getElementById('liveRGB').innerText = `${avgRNum.toFixed(1)}, ${avgGNum.toFixed(1)}, ${avgBNum.toFixed(1)}`;
+            document.getElementById('liveGray').innerText = avgGrayNum.toFixed(2);
+            document.getElementById('liveRGB_SD').innerText = `${sdR.toFixed(1)}, ${sdG.toFixed(1)}, ${sdB.toFixed(1)}`;
+            document.getElementById('liveGray_SD').innerText = `±${sdGray.toFixed(2)}`;
+
+            activeTelemetrySnapshot = {
+                rMean: avgRNum, gMean: avgGNum, bMean: avgBNum, grayMean: avgGrayNum,
+                rSD: sdR, gSD: sdG, bSD: sdB, graySD: sdGray
+            };
+
+            const telemetryBox = document.getElementById('telemetryBox');
+            const grayLabelPrefix = document.getElementById('grayLabelPrefix');
+            const rgbLabelPrefix = document.getElementById('rgbLabelPrefix');
+            const GLOBAL_MAX_THRESHOLD = 40.0; 
+
+            if (sdR > GLOBAL_MAX_THRESHOLD || sdG > GLOBAL_MAX_THRESHOLD || sdB > GLOBAL_MAX_THRESHOLD || sdGray > GLOBAL_MAX_THRESHOLD) {
+                isAreaInvalid = true;
+                telemetryBox.classList.add('alert-active');
+                grayLabelPrefix.innerText = "⚠️ BOUNDARY"; rgbLabelPrefix.innerText = "⚠️ ER";
+                document.getElementById('btnAnchorP1').classList.add('ui-disabled');
+                document.getElementById('btnAnchorP2').classList.add('ui-disabled');
+                document.getElementById('btnQuantify').classList.add('ui-disabled');
+            } else {
+                isAreaInvalid = false;
+                telemetryBox.classList.remove('alert-active');
+                grayLabelPrefix.innerText = "±SD:"; rgbLabelPrefix.innerText = "±SD:";
+                document.getElementById('btnAnchorP1').classList.remove('ui-disabled');
+                document.getElementById('btnAnchorP2').classList.remove('ui-disabled');
+                document.getElementById('btnQuantify').classList.remove('ui-disabled');
+            }
+            return avgGrayNum;
+        } catch (e) { return null; }
+    }
+
+    function logTriplePoint(pointNum) {
+        if (!imgLoaded || isAreaInvalid || !activeTelemetrySnapshot) return;
+        const currentGray = activeTelemetrySnapshot.grayMean;
+
+        let arr = (pointNum === 1) ? p1Replicates : p2Replicates;
+        let prefix = (pointNum === 1) ? 'p1_' : 'p2_';
+        let warningUI = document.getElementById((pointNum === 1) ? 'p1QCWarning' : 'p2QCWarning');
+
+        if (arr.length >= 3) {
+            if(confirm(`Point P${pointNum} matrix is full. Reset and re-log?`)) {
+                arr.length = 0;
+                warningUI.style.display = "none";
+                for(let i=1; i<=3; i++) document.getElementById(`${prefix}s${i}`).classList.remove('slot-filled');
+            } else { return; }
+        }
+
+        arr.push(currentGray);
+        document.getElementById(`${prefix}s${arr.length}`).classList.add('slot-filled');
+
+        let nominalConc = parseFloat(document.getElementById((pointNum === 1) ? 'c1' : 'c2').value);
+        masterAnalyticalLog.push({
+            stage: `Calibration_P${pointNum}_Repl_${arr.length}`,
+            groupName: `Calibration_P${pointNum}`,
+            nominalConc: nominalConc,
+            estConcSD: 0, 
+            ...activeTelemetrySnapshot
+        });
+
+        let sum = arr.reduce((a, b) => a + b, 0);
+        let avg = sum / arr.length;
+        document.getElementById((pointNum === 1) ? 'p1Summary' : 'p2Summary').innerHTML = `Logged [${arr.length}/3]. Current Avg Gray: <b>${avg.toFixed(2)}</b>`;
+
+        if (arr.length === 3) {
+            let mean = sum / 3;
+            let varianceSum = arr.reduce((a, b) => a + Math.pow(b - mean, 2), 0);
+            let besselSD = Math.sqrt(varianceSum / 2);
+            let rsdPercent = (besselSD / mean) * 100;
+
+            if (rsdPercent > 5.0) {
+                warningUI.innerText = `⚠️ Imprecision Alert: RSD is ${rsdPercent.toFixed(1)}%. Re-logging recommended for robust curve.`;
+                warningUI.style.display = "block";
+            } else {
+                warningUI.style.display = "none";
+            }
+
+            if (pointNum === 1) p1Final = { conc: nominalConc, grayMean: mean, sd: besselSD }; 
+            else p2Final = { conc: nominalConc, grayMean: mean, sd: besselSD };
+        }
+    }
+
+    function generateLinearModel() {
+        if (!p1Final || !p2Final) { alert("Matrix Incomplete: Replicates missing."); return; }
+        modelK = (p2Final.grayMean - p1Final.grayMean) / (p2Final.conc - p1Final.conc);
+        modelB = p1Final.grayMean - modelK * p1Final.conc;
+
+        document.getElementById('step2Box').classList.remove('locked');
+        document.getElementById('modelStatus').innerHTML = `Active Model: Gray = (${modelK.toFixed(3)} * Conc) + ${modelB.toFixed(2)}`;
+        alert("Analytical model established successfully!");
+    }
+
+    function evaluateUnknownSample() {
+        if (modelK === null || modelB === null || isAreaInvalid || !activeTelemetrySnapshot) return;
+        const currentGray = activeTelemetrySnapshot.grayMean;
+
+        let calcConc = (currentGray - modelB) / modelK;
+        if (calcConc < 0) calcConc = 0; 
+
+        targetSampleConcentrations.push(calcConc);
+        currentGroupTelemetryHistory.push({ ...activeTelemetrySnapshot });
+        
+        const sampleCount = targetSampleConcentrations.length;
+
+        let concSum = targetSampleConcentrations.reduce((a, b) => a + b, 0);
+        let concMean = concSum / sampleCount;
+
+        let uncertaintyText = "";
+        let finalSDVal = 0;
+
+        if (sampleCount === 1) {
+            document.getElementById('assayModeBadge').innerText = `Rapid Screening Mode (n=1)`;
+            document.getElementById('assayModeBadge').style.color = "#df8a14";
+            uncertaintyText = "± 0.00"; 
+        } else {
+            document.getElementById('assayModeBadge').innerText = `High-Precision Mode (n=${sampleCount})`;
+            document.getElementById('assayModeBadge').style.color = "#10b981";
+            let concVarSum = targetSampleConcentrations.reduce((a, b) => a + Math.pow(b - concMean, 2), 0);
+            finalSDVal = Math.sqrt(concVarSum / (sampleCount - 1));
+            uncertaintyText = `± ${finalSDVal.toFixed(2)}`;
+        }
+
+        const resultUIBox = document.getElementById('resultUIBox');
+        const lowBound = Math.min(p1Final.conc, p2Final.conc);
+        const highBound = Math.max(p1Final.conc, p2Final.conc);
+
+        if (concMean < lowBound || concMean > highBound) {
+            resultUIBox.classList.add('out-of-range');
+            document.getElementById('resultLabel').innerHTML = `Estimated [Fe³⁺] <span style='font-size:10px; color:#d97706;'>[Out of Range]</span>:`;
+        } else {
+            resultUIBox.classList.remove('out-of-range');
+            document.getElementById('resultLabel').innerText = `Estimated [Fe³⁺]:`;
+        }
+
+        document.getElementById('finalConcentration').innerText = `${concMean.toFixed(2)} ${uncertaintyText} mM`;
+        let formattedHistory = targetSampleConcentrations.map(c => c.toFixed(2) + " mM").join(', ');
+        document.getElementById('sampleRawHistory').innerText = `Logged Trial Concs: [${formattedHistory}]`;
+    }
+
+    function archiveCurrentConcentrationGroup() {
+        if (targetSampleConcentrations.length === 0) {
+            alert("No data points collected in the current group to store!");
+            return;
+        }
+
+        archivedGroupCounter++;
+        let currentGroupName = `Group_${archivedGroupCounter}`;
+        
+        let concSum = targetSampleConcentrations.reduce((a, b) => a + b, 0);
+        let concMean = concSum / targetSampleConcentrations.length;
+        
+        let finalSDVal = 0;
+        if (targetSampleConcentrations.length > 1) {
+            let concVarSum = targetSampleConcentrations.reduce((a, b) => a + Math.pow(b - concMean, 2), 0);
+            finalSDVal = Math.sqrt(concVarSum / (targetSampleConcentrations.length - 1));
+        }
+
+        // 计算当前组所有测定点的 Gray 均值
+        let graySum = currentGroupTelemetryHistory.reduce((sum, t) => sum + t.grayMean, 0);
+        let grayMeanAll = graySum / currentGroupTelemetryHistory.length;
+
+        // 保存统计特征到主统计库
+        masterGroupSummaryLog.push({
+            groupName: currentGroupName,
+            n: targetSampleConcentrations.length,
+            meanConc: concMean,
+            sdConc: finalSDVal,
+            meanGray: grayMeanAll
+        });
+
+        // 将每个点的细节打散，存入细分数据库
+        targetSampleConcentrations.forEach((conc, index) => {
+            let telemetry = currentGroupTelemetryHistory[index];
+            masterAnalyticalLog.push({
+                stage: `${currentGroupName}_Spot_${index + 1}`,
+                groupName: currentGroupName,
+                nominalConc: conc, // 单点计算值
+                estConcSD: finalSDVal, // 组内变异差
+                ...telemetry
+            });
+        });
+
+        alert(`Success: Group #${archivedGroupCounter} (n=${targetSampleConcentrations.length}, Mean=${concMean.toFixed(2)} mM) has been safely locked into the master database.\n\nCurrent workspace is now automatically cleared for your next concentration sample!`);
+        
+        targetSampleConcentrations = [];
+        currentGroupTelemetryHistory = [];
+        clearUIFields();
+    }
+
+    function resetSampleCounter() {
+        if (targetSampleConcentrations.length === 0) return;
+        if (confirm("Discard all clicked points in the CURRENT active group? (Stored history database remains perfectly safe)")) {
+            targetSampleConcentrations = [];
+            currentGroupTelemetryHistory = [];
+            clearUIFields();
+        }
+    }
+
+    function clearUIFields() {
+        document.getElementById('resultUIBox').classList.remove('out-of-range');
+        document.getElementById('resultLabel').innerText = `Estimated [Fe³⁺]:`;
+        document.getElementById('assayModeBadge').innerText = `Single Screening (n=0)`;
+        document.getElementById('assayModeBadge').style.color = "#2563eb";
+        document.getElementById('finalConcentration').innerText = "- mM";
+        document.getElementById('sampleRawHistory').innerText = "History calculated concentrations: None";
+    }
+
+    function clearMasterDatabase() {
+        if (masterAnalyticalLog.length === 0 && masterGroupSummaryLog.length === 0) {
+            alert("Master export log is already empty.");
+            return;
+        }
+        if (confirm("🚨 WARNING: You are executing a master log clear!\nThis will delete ALL archived groups from the export memory. However, your calibrated slope and intercept will be perfectly preserved. Proceed?")) {
+            masterAnalyticalLog = [];
+            masterGroupSummaryLog = [];
+            archivedGroupCounter = 0;
+            alert("Historical grand logs cleared. Linear calibration model is still active!");
+        }
+    }
+
+    // 原始表格文字复制功能：加入了拟合参数和均值信息的头部回显
+    function exportCompleteDatasets() {
+        if (masterAnalyticalLog.length === 0) {
+            alert("Export Matrix Empty: Store finalized concentration groups first.");
+            return;
+        }
+
+        let txtRows = [];
+        txtRows.push("# --- SMART Fe-RGB ANALYZER REPORT ---");
+        txtRows.push(`# Date: ${new Date().toLocaleString()}`);
+        if(modelK !== null) {
+            txtRows.push(`# Calibration Model: Gray = (${modelK.toFixed(4)} * Conc) + ${modelB.toFixed(2)}`);
+            txtRows.push(`# Curve Parameters: Slope = ${modelK.toFixed(4)}\tIntercept = ${modelB.toFixed(2)}`);
+        }
+        txtRows.push("");
+        
+        txtRows.push("# --- SECTION 1: GROUP STATISTICAL SUMMARY ---");
+        txtRows.push("Group_ID\tReplicates_n\tMean_Concentration(mM)\tSD_Concentration(mM)\tMean_Gray_Value");
+        masterGroupSummaryLog.forEach(g => {
+            txtRows.push(`${g.groupName}\t${g.n}\t${g.meanConc.toFixed(3)}\t${g.sdConc.toFixed(3)}\t${g.meanGray.toFixed(2)}`);
+        });
+        
+        txtRows.push("");
+        txtRows.push("# --- SECTION 2: RAW SPOT METRIC MATRIX ---");
+        txtRows.push("Data_Point_ID\tBelonging_Group\tConc_Calculated(mM)\tGroup_SD_Uncertainty(mM)\tMean_Gray\tSpatial_SD_Gray\tMean_R\tSpatial_SD_R\tMean_G\tSpatial_SD_G\tMean_B\tSpatial_SD_B");
+
+        masterAnalyticalLog.forEach(row => {
+            let line = `${row.stage}\t` +
+                       `${row.groupName}\t` +
+                       `${row.nominalConc.toFixed(3)}\t` +
+                       `${row.estConcSD.toFixed(3)}\t` +
+                       `${row.grayMean.toFixed(3)}\t` +
+                       `${row.graySD.toFixed(3)}\t` +
+                       `${row.rMean.toFixed(3)}\t` +
+                       `${row.rSD.toFixed(3)}\t` +
+                       `${row.gMean.toFixed(3)}\t` +
+                       `${row.gSD.toFixed(3)}\t` +
+                       `${row.bMean.toFixed(3)}\t` +
+                       `${row.bSD.toFixed(3)}`;
+            txtRows.push(line);
+        });
+
+        let outputString = txtRows.join("\n");
+
+        navigator.clipboard.writeText(outputString).then(() => {
+            alert(`🔥 Academic Log Exported!\nTotal logged entries: ${masterAnalyticalLog.length}\nData copied to clipboard. Go to Excel or Origin and press Ctrl+V directly!`);
+        }).catch(err => {
+            console.error("Clipboard failure: ", err);
+            alert("Clipboard restricted. Raw data stream:\n\n" + outputString);
+        });
+    }
+
+    /**
+     * 核心库功能：直接从网页下载原生的、经过精细排版的 Excel 文件 (.xlsx)
+     */
+    function exportToExcelFile() {
+        if (masterAnalyticalLog.length === 0) {
+            alert("Export Matrix Empty: Please lock and store target groups first.");
+            return;
+        }
+
+        // 创建新的工作簿
+        const wb = XLSX.utils.book_new();
+
+        // --- SHEET 1: 拟合曲线与统计分组快报 ---
+        let summaryData = [];
+        summaryData.push(["SMART Fe-RGB ANALYZER REPORT", ""]);
+        summaryData.push(["Export Timestamp:", new Date().toLocaleString()]);
+        summaryData.push(["", ""]);
+        
+        summaryData.push(["[PART A: LINEAR CALIBRATION PARAMETERS]", ""]);
+        summaryData.push(["Slope (斜率, k):", modelK !== null ? parseFloat(modelK.toFixed(5)) : "N/A"]);
+        summaryData.push(["Intercept (截距, b):", modelB !== null ? parseFloat(modelB.toFixed(3)) : "N/A"]);
+        summaryData.push(["Equation:", modelK !== null ? `Gray = ${modelK.toFixed(4)} * [Fe³⁺] + ${modelB.toFixed(2)}` : "N/A"]);
+        summaryData.push(["", ""]);
+
+        summaryData.push(["[PART B: GROUP STATISTICAL SUMMARY]", "", "", "", ""]);
+        summaryData.push(["Group ID", "Replicates (n)", "Mean Concentration (mM)", "Standard Deviation (SD)", "Mean Gray Value (Y)"]);
+        
+        masterGroupSummaryLog.forEach(g => {
+            summaryData.push([
+                g.groupName, 
+                g.n, 
+                parseFloat(g.meanConc.toFixed(4)), 
+                parseFloat(g.sdConc.toFixed(4)), 
+                parseFloat(g.meanGray.toFixed(2))
+            ]);
+        });
+
+        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, wsSummary, "Summary & Model");
+
+        // --- SHEET 2: 所有单点(Spots)的全通道原始矩阵 ---
+        let rawDataRows = [];
+        // 表头
+        rawDataRows.push([
+            "Data Point ID", "Belonging Group", "Calculated Conc (mM)", "Group SD (mM)", 
+            "Mean Gray (Y)", "Spatial SD Gray", "Mean R", "Spatial SD R", 
+            "Mean G", "Spatial SD G", "Mean B", "Spatial SD B"
+        ]);
+
+        masterAnalyticalLog.forEach(row => {
+            rawDataRows.push([
+                row.stage,
+                row.groupName,
+                parseFloat(row.nominalConc.toFixed(4)),
+                parseFloat(row.estConcSD.toFixed(4)),
+                parseFloat(row.grayMean.toFixed(3)),
+                parseFloat(row.graySD.toFixed(3)),
+                parseFloat(row.rMean.toFixed(2)),
+                parseFloat(row.rSD.toFixed(2)),
+                parseFloat(row.gMean.toFixed(2)),
+                parseFloat(row.gSD.toFixed(2)),
+                parseFloat(row.bMean.toFixed(2)),
+                parseFloat(row.bSD.toFixed(2))
+            ]);
+        });
+
+        const wsRaw = XLSX.utils.aoa_to_sheet(rawDataRows);
+        XLSX.utils.book_append_sheet(wb, wsRaw, "Raw Spot Matrix");
+
+        // 执行文件下载
+        let fileName = `Fe_RGB_Analysis_Report_${new Date().toISOString().slice(0,10)}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+    }
+
+    // Touch Navigation Rig for Mobile Zoom & Pan Support
+    function getDistance(touches) { return Math.sqrt(Math.pow(touches[0].clientX - touches[1].clientX, 2) + Math.pow(touches[0].clientY - touches[1].clientY, 2)); }
+    container.addEventListener('mousedown', (e) => { if (!imgLoaded) return; isDragging = true; dragStartX = e.clientX - imgX; dragStartY = e.clientY - imgY; });
+    window.addEventListener('mouseup', () => { isDragging = false; });
+    container.addEventListener('mousemove', (e) => { if (!isDragging || !imgLoaded) return; imgX = e.clientX - dragStartX; imgY = e.clientY - dragStartY; render(); });
+    container.addEventListener('wheel', (e) => {
+        if (!imgLoaded) return; e.preventDefault();
+        const oldScale = imgScale; const scaleChange = e.deltaY > 0 ? 0.92 : 1.08; imgScale *= scaleChange;
+        imgX = (container.clientWidth/2) - ((container.clientWidth/2) - imgX) * (imgScale / oldScale);
+        imgY = (container.clientHeight/2) - ((container.clientHeight/2) - imgY) * (imgScale / oldScale);
+        render();
+    }, { passive: false });
+    container.addEventListener('touchstart', (e) => {
+        if (!imgLoaded) return; isDragging = true;
+        if (e.touches.length === 1) { dragStartX = e.touches[0].clientX - imgX; dragStartY = e.touches[0].clientY - imgY; }
+        else if (e.touches.length === 2) { lastPinchDist = getDistance(e.touches); isDragging = false; }
+    });
+    container.addEventListener('touchend', () => { isDragging = false; });
+    container.addEventListener('touchmove', (e) => {
+        if (!imgLoaded) return; e.preventDefault();
+        if (e.touches.length === 1 && isDragging) { imgX = e.touches[0].clientX - dragStartX; imgY = e.touches[0].clientY - dragStartY; render(); }
+        else if (e.touches.length === 2) {
+            const newPinchDist = getDistance(e.touches); const oldScale = imgScale; imgScale *= (newPinchDist / lastPinchDist);
+            imgX = (container.clientWidth/2) - ((container.clientWidth/2) - imgX) * (imgScale / oldScale);
+            imgY = (container.clientHeight/2) - ((container.clientHeight/2) - imgY) * (imgScale / oldScale);
+            lastPinchDist = newPinchDist; render();
+        }
+    }, { passive: false });
+</script>
+
+</body>
+</html>
