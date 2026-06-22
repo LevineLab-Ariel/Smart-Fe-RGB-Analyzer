@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Smart Fe-RGB Analyzer v2</title>
+  <title>Smart Fe-RGB Analyzer</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <style>
     :root {
       --bg: #eef2f6;
@@ -213,10 +214,10 @@
     .model-box {
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 10px;
+      padding: 8px 10px;
       background: var(--surface-soft);
       display: grid;
-      gap: 6px;
+      gap: 4px;
       font-size: 12px;
     }
 
@@ -305,10 +306,42 @@
       gap: 8px;
     }
 
+    .model-primary {
+      font-size: 12px;
+    }
+
+    .model-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.25;
+    }
+
+    .model-meta b {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
     .range-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
+    }
+
+    .equation-param-row {
+      display: grid;
+      grid-template-columns: minmax(122px, 1.05fr) 1fr 1fr;
+      gap: 8px;
+    }
+
+    .equation-action-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr minmax(130px, 1.15fr);
+      gap: 8px;
+      align-items: end;
     }
 
     .mono {
@@ -451,6 +484,31 @@
       border-radius: 8px;
     }
 
+    .table-details {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .table-details summary {
+      cursor: pointer;
+      padding: 7px 9px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--slate);
+      background: var(--surface-soft);
+      list-style: none;
+    }
+
+    .table-details summary::-webkit-details-marker { display: none; }
+
+    .table-details .table-wrap {
+      border: 0;
+      border-top: 1px solid var(--line);
+      border-radius: 0;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -574,8 +632,8 @@
 
     @media (max-width: 1080px) {
       .grid { grid-template-columns: 1fr; }
-      .canvas-panel { min-height: 0; order: -3; }
-      .calibration-panel { order: -2; }
+      .calibration-panel { order: -3; }
+      .canvas-panel { min-height: 0; order: -2; }
       .samples-panel { order: -1; }
       .canvas-wrap { height: 360px; }
       .telemetry { grid-template-columns: repeat(2, 1fr); }
@@ -595,17 +653,19 @@
         gap: 2px;
         flex: 1 1 210px;
       }
-      h1 { font-size: 18px; max-width: 210px; }
+      h1 { font-size: 18px; white-space: nowrap; }
       .subtitle { display: none; }
       #resetAllBtn { min-height: 30px; padding: 5px 8px; font-size: 12px; }
       .segmented { grid-template-columns: repeat(3, 1fr); }
       .row, .row-3 { grid-template-columns: 1fr; }
+      .settings-row { grid-template-columns: 1fr 1fr; }
       .range-row,
       .sample-fields,
       .sample-actions,
       .sample-result { grid-template-columns: 1fr 1fr; }
       .sample-result { grid-template-columns: repeat(3, 1fr); gap: 6px; }
-      #mode-equation .row { grid-template-columns: 1fr 1fr; }
+      .equation-param-row { grid-template-columns: 0.95fr 1fr 1fr; }
+      .equation-action-row { grid-template-columns: 1fr 1fr minmax(105px, 1fr); }
       .full-capture-row { grid-template-columns: minmax(100px, 1fr) minmax(112px, 1fr); }
       .full-range-row { grid-template-columns: 1fr 1fr 84px; }
       .point-row { grid-template-columns: 68px 92px minmax(95px, 1fr); gap: 6px; padding: 7px; }
@@ -636,7 +696,7 @@
   <main class="app">
     <div class="topbar">
       <div class="brand">
-        <h1>Smart Fe-RGB Analyzer v2</h1>
+        <h1>Smart Fe-RGB Analyzer</h1>
         <span class="subtitle">Equation import, full calibration, field two-point modes</span>
       </div>
       <button class="btn-soft" id="resetAllBtn" type="button">Reset session</button>
@@ -655,7 +715,7 @@
             <button type="button" data-mode="twoPoint">Two-point</button>
           </div>
 
-          <div class="row">
+          <div class="row settings-row">
             <label class="label">Sensor name
               <input id="sensorName" placeholder="optional">
             </label>
@@ -674,7 +734,12 @@
             <label class="label">Equation text
               <input id="equationText" value="Y = -4.2120C + 82.561" readonly>
             </label>
-            <div class="row">
+            <div class="equation-param-row">
+              <label class="label">Model
+                <select id="eqModel">
+                  <option value="linear" selected>Linear: C = (Y - b) / k</option>
+                </select>
+              </label>
               <label class="label">Slope, k
                 <input type="number" id="eqSlope" value="-4.2120" step="0.0001">
               </label>
@@ -682,17 +747,14 @@
                 <input type="number" id="eqIntercept" value="82.561" step="0.001">
               </label>
             </div>
-            <div class="range-row">
+            <div class="equation-action-row">
               <label class="label">C range min
                 <input type="number" id="eqMin" value="0" step="0.01">
               </label>
               <label class="label">C range max
                 <input type="number" id="eqMax" value="10" step="0.01">
               </label>
-            </div>
-            <div class="row">
-              <div class="model-box" style="padding:8px;">C = (Y - b) / k</div>
-              <button class="btn-primary" type="button" id="activateEquation">Activate equation</button>
+              <button class="btn-primary" type="button" id="activateEquation">Activate</button>
             </div>
           </div>
 
@@ -722,16 +784,19 @@
               <span id="fullCurveStatus">No standards captured.</span>
               <span class="mono" id="fullCurveLevels">0 levels</span>
             </div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>C</th><th>n</th><th>Mean signal</th><th>RSD</th><th>Flag</th></tr>
-                </thead>
-                <tbody id="standardRows">
-                  <tr><td colspan="5">No standards captured.</td></tr>
-                </tbody>
-              </table>
-            </div>
+            <details class="table-details">
+              <summary>Standard table</summary>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>C</th><th>n</th><th>Mean signal</th><th>RSD</th><th>Flag</th></tr>
+                  </thead>
+                  <tbody id="standardRows">
+                    <tr><td colspan="5">No standards captured.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
             <button class="btn-green btn-icon" type="button" id="fitFullCurve">
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M6 16l4-4 3 3 6-8"/></svg>
               Fit full calibration
@@ -772,9 +837,11 @@
           </div>
 
           <div class="model-box" id="activeModelBox">
-            <div class="model-line"><b>Active equation</b><span class="mono" id="activeEquation">None</span></div>
-            <div class="model-line"><span>Range</span><span id="activeRange">-</span></div>
-            <div class="model-line"><span>Mode</span><span id="activeMode">-</span></div>
+            <div class="model-line model-primary"><b>Active</b><span class="mono" id="activeEquation">None</span></div>
+            <div class="model-meta">
+              <span>Range <b id="activeRange">-</b></span>
+              <span>Mode <b id="activeMode">-</b></span>
+            </div>
           </div>
 
           <details class="advanced">
@@ -784,16 +851,16 @@
                 <input type="number" id="eqR2" placeholder="for report only" step="0.0001">
               </label>
               <div class="row">
-                <label class="label">Spatial SD threshold
+                <label class="label">ROI SD warning
                   <input type="number" id="spatialLimit" value="40" step="1">
                 </label>
-                <label class="label">RSD threshold (%)
-                  <input type="number" id="rsdLimit" value="5" step="0.5">
+                <label class="label">Replicate RSD warning (%)
+                  <input type="number" id="rsdLimit" value="25" step="1">
                 </label>
               </div>
               <label class="label" style="display:flex; grid-template-columns:auto 1fr; align-items:center; gap:7px;">
                 <input type="checkbox" id="blockBadRoi" checked>
-                <span>Block high-spatial-SD captures</span>
+                <span>Block high-ROI-SD captures</span>
               </label>
             </div>
           </details>
@@ -845,7 +912,7 @@
               <input id="sampleId" value="Rust sample">
             </label>
             <label class="label">Reference C
-              <input type="number" id="referenceConc" placeholder="optional for recovery" step="0.001">
+              <input type="number" id="referenceConc" placeholder="optional for agreement" step="0.001">
             </label>
           </div>
           <div class="sample-actions">
@@ -858,6 +925,26 @@
               Store
             </button>
           </div>
+          <div class="sample-summary">
+            <div class="sample-result">
+              <div class="result-cell" id="groupConcCell"><b>Estimated C</b><span id="groupConc">-</span></div>
+              <div class="result-cell"><b>SD / RSD</b><span id="groupPrecision">-</span></div>
+              <div class="result-cell"><b>Agreement</b><span id="groupAgreement">Ref not set</span></div>
+            </div>
+            <div id="groupFlags" class="tight"></div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>#</th><th>Signal</th><th>Conc.</th><th>ROI SD</th><th>Flag</th></tr>
+              </thead>
+              <tbody id="spotRows">
+                <tr><td colspan="5">No spots captured.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
           <div class="sample-actions">
             <button class="btn-soft btn-icon" type="button" id="clearCurrentGroup">
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
@@ -869,26 +956,6 @@
             </button>
           </div>
 
-          <div class="sample-summary">
-            <div class="sample-result">
-              <div class="result-cell" id="groupConcCell"><b>Estimated C</b><span id="groupConc">-</span></div>
-              <div class="result-cell"><b>SD / RSD</b><span id="groupPrecision">-</span></div>
-              <div class="result-cell"><b>Recovery</b><span id="groupRecovery">-</span></div>
-            </div>
-            <div id="groupFlags" class="tight"></div>
-          </div>
-
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr><th>#</th><th>Signal</th><th>Conc.</th><th>Spatial SD</th><th>Flag</th></tr>
-              </thead>
-              <tbody id="spotRows">
-                <tr><td colspan="5">No spots captured.</td></tr>
-              </tbody>
-            </table>
-          </div>
-
           <div class="row">
             <button class="btn-slate btn-icon" type="button" id="copyTsv">
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -896,14 +963,14 @@
             </button>
             <button class="btn-slate btn-icon" type="button" id="downloadReport">
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
-              Download report
+              Download report (.xlsx)
             </button>
           </div>
 
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Group</th><th>n</th><th>Mean C</th><th>SD</th><th>Recovery</th></tr>
+                <tr><th>Group</th><th>n</th><th>Mean C</th><th>SD</th><th>Agreement</th></tr>
               </thead>
               <tbody id="storedRows">
                 <tr><td colspan="5">No stored groups.</td></tr>
@@ -989,7 +1056,7 @@
       if (!snap) return { level: "bad", text: "No ROI data" };
       const limit = Number(el("spatialLimit").value);
       const maxSd = maxSpatialSD(snap);
-      if (maxSd > limit) return { level: "bad", text: "High spatial SD" };
+      if (maxSd > limit) return { level: "bad", text: "High ROI SD" };
       return { level: "ok", text: "OK" };
     }
 
@@ -1110,7 +1177,7 @@
       }
       const flag = currentQcFlag(state.live);
       if (flag.level === "bad" && el("blockBadRoi").checked) {
-        alert("ROI spatial SD exceeds the selected threshold.");
+        alert("ROI SD is above the selected warning limit.");
         return false;
       }
       return true;
@@ -1283,6 +1350,7 @@
       const cMin = Number(el("fullMin").value);
       const cMax = Number(el("fullMax").value) || Math.max(...groups.map((r) => r.referenceConc));
       buildModel(fit.k, fit.b, Number.isFinite(cMin) ? cMin : Math.min(...groups.map((r) => r.referenceConc)), cMax, "Full calibration", fit.r2, state.standards);
+      el("fullCurveStatus").textContent = `Y = ${fmt(fit.k, 4)}C ${fit.b < 0 ? "-" : "+"} ${fmt(Math.abs(fit.b), 3)}${fit.r2 === null ? "" : ", R2 = " + fmt(fit.r2, 4)}`;
     }
 
     function captureTwoPoint(which) {
@@ -1377,7 +1445,7 @@
       if (!spots.length) {
         el("groupConc").textContent = "-";
         el("groupPrecision").textContent = "-";
-        el("groupRecovery").textContent = "-";
+        el("groupAgreement").textContent = "Ref not set";
         el("groupConcCell").classList.remove("warn");
         el("groupFlags").innerHTML = "";
         return;
@@ -1390,16 +1458,16 @@
       el("groupPrecision").textContent = fmt(cSd, 3) + " / " + fmt(cRsd, 1) + "%";
       const refValue = el("referenceConc").value === "" ? null : Number(el("referenceConc").value);
       if (refValue && Number.isFinite(refValue)) {
-        el("groupRecovery").textContent = fmt(cMean / refValue * 100, 1) + "%";
+        el("groupAgreement").textContent = fmt(cMean / refValue * 100, 1) + "%";
       } else {
-        el("groupRecovery").textContent = "-";
+        el("groupAgreement").textContent = "Ref not set";
       }
       const meanOutOfRange = state.model && (cMean < state.model.cMin || cMean > state.model.cMax);
       el("groupConcCell").classList.toggle("warn", !!meanOutOfRange);
       if (meanOutOfRange) flags.push(["warn", "Estimated C is outside active range"]);
       if (spots.some((s) => s.outOfRange)) flags.push(["warn", "One or more spots are out of range"]);
-      if (cRsd > Number(el("rsdLimit").value)) flags.push(["warn", "Replicate RSD exceeds threshold"]);
-      if (spots.some((s) => s.qc !== "OK")) flags.push(["bad", "One or more spots have high spatial SD"]);
+      if (cRsd > Number(el("rsdLimit").value)) flags.push(["warn", "Replicate variation above warning limit"]);
+      if (spots.some((s) => s.qc !== "OK")) flags.push(["bad", "One or more spots have high ROI SD"]);
       el("groupFlags").innerHTML = flags.length
         ? flags.map((f) => `<span class="flag ${f[0]}">${f[1]}</span>`).join("")
         : '<span class="flag">Quality OK</span>';
@@ -1422,7 +1490,7 @@
         sdConc: sd(vals),
         rsdPercent: rsd(vals),
         referenceConc: refValue,
-        recoveryPercent: refValue ? mean(vals) / refValue * 100 : null,
+        agreementPercent: refValue ? mean(vals) / refValue * 100 : null,
         meanSignal: mean(state.currentSpots.map((s) => s.signal)),
         spots: state.currentSpots.map((s, i) => ({ ...s, group: groupId, id: groupId + "_Spot_" + (i + 1) })),
         storedAt: new Date().toISOString()
@@ -1441,7 +1509,7 @@
         return;
       }
       body.innerHTML = state.storedGroups.map((g) => {
-        return `<tr><td>${g.sampleId}</td><td>${g.n}</td><td>${fmt(g.meanConc, 3)}</td><td>${fmt(g.sdConc, 3)}</td><td>${g.recoveryPercent === null ? "-" : fmt(g.recoveryPercent, 1) + "%"}</td></tr>`;
+        return `<tr><td>${g.sampleId}</td><td>${g.n}</td><td>${fmt(g.meanConc, 3)}</td><td>${fmt(g.sdConc, 3)}</td><td>${g.agreementPercent === null ? "-" : fmt(g.agreementPercent, 1) + "%"}</td></tr>`;
       }).join("");
     }
 
@@ -1452,6 +1520,7 @@
     }
 
     function clearAllGroups() {
+      if (!confirm("Clear all stored sample groups?")) return;
       state.storedGroups = [];
       state.groupCounter = 0;
       renderStoredGroups();
@@ -1460,7 +1529,7 @@
     function reportRows() {
       const model = state.model;
       const summary = [
-        ["SMART Fe-RGB ANALYZER V2 REPORT"],
+        ["SMART Fe-RGB ANALYZER REPORT"],
         ["Export timestamp", new Date().toLocaleString()],
         [],
         ["CALIBRATION"],
@@ -1475,16 +1544,16 @@
         ["R2", model && model.r2 !== null ? model.r2 : ""],
         [],
         ["GROUP SUMMARY"],
-        ["Group ID", "Sample ID", "n", "Reference C", "Mean C", "SD", "RSD (%)", "Recovery (%)", "Mean signal"]
+        ["Group ID", "Sample ID", "n", "Reference C", "Mean C", "SD", "RSD (%)", "Agreement (%)", "Mean signal"]
       ];
       state.storedGroups.forEach((g) => {
-        summary.push([g.groupId, g.sampleId, g.n, g.referenceConc ?? "", g.meanConc, g.sdConc, g.rsdPercent, g.recoveryPercent ?? "", g.meanSignal]);
+        summary.push([g.groupId, g.sampleId, g.n, g.referenceConc ?? "", g.meanConc, g.sdConc, g.rsdPercent, g.agreementPercent ?? "", g.meanSignal]);
       });
 
       const raw = [
         [],
         ["RAW ROI DATA"],
-        ["Point ID", "Group ID", "Sample ID", "Reference C", "Estimated C", "Signal", "Signal SD", "Max spatial SD", "Quality flag", "Out of range", "R mean", "R SD", "G mean", "G SD", "B mean", "B SD", "Average RGB mean", "Average RGB SD", "Luma mean", "Luma SD"]
+        ["Point ID", "Group ID", "Sample ID", "Reference C", "Estimated C", "Signal", "Signal SD", "Max ROI SD", "Quality flag", "Out of range", "R mean", "R SD", "G mean", "G SD", "B mean", "B SD", "Average RGB mean", "Average RGB SD", "Luma mean", "Luma SD"]
       ];
       state.storedGroups.flatMap((g) => g.spots).forEach((s) => {
         raw.push([s.id, s.group, s.sampleId, s.referenceConc ?? "", s.estimatedConc, s.signal, s.signalSD, s.maxSpatialSD, s.qc, s.outOfRange ? "yes" : "no", s.rMean, s.rSD, s.gMean, s.gSD, s.bMean, s.bSD, s.avgRGBMean, s.avgRGBSD, s.lumaMean, s.lumaSD]);
@@ -1515,18 +1584,36 @@
     }
 
     function downloadReport() {
-      const text = rowsToTsv(reportRows());
-      const blob = new Blob([text], { type: "application/vnd.ms-excel;charset=utf-8" });
+      const rows = reportRows();
+      if (window.XLSX) {
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        ws["!cols"] = rows.reduce((cols, row) => {
+          row.forEach((cell, index) => {
+            const width = Math.min(28, Math.max(cols[index]?.wch || 10, String(cell ?? "").length + 2));
+            cols[index] = { wch: width };
+          });
+          return cols;
+        }, []);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Report");
+        XLSX.writeFile(wb, "Smart_Fe_RGB_Analyzer_Report.xlsx");
+        return;
+      }
+
+      const text = rowsToTsv(rows);
+      const blob = new Blob([text], { type: "text/tab-separated-values;charset=utf-8" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = "Smart_Fe_RGB_Analyzer_v2_Report.xls";
+      a.download = "Smart_Fe_RGB_Analyzer_Report.tsv";
       document.body.appendChild(a);
       a.click();
       URL.revokeObjectURL(a.href);
       a.remove();
+      alert("XLSX library did not load, so a TSV fallback was downloaded.");
     }
 
     function resetSession() {
+      if (!confirm("Reset the full session and clear all captured data?")) return;
       state.model = null;
       state.standards = [];
       state.p1 = [];
