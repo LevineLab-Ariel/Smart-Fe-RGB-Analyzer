@@ -1,698 +1,1665 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Fe-RGB Analyzer (Academic Supporting Tool)</title>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f1f5f9; margin: 0; padding: 10px; color: #1e293b;
-            display: flex; flex-direction: column; align-items: center;
-        }
-        .container {
-            max-width: 500px; width: 100%; background: #ffffff; padding: 15px;
-            border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); box-sizing: border-box;
-        }
-        h2 {
-            font-size: 15px; text-align: center; color: #1e3a8a; margin: 0 0 15px 0;
-            text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;
-        }
-        .section-box {
-            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin-bottom: 15px;
-        }
-        .section-title {
-            font-size: 13px; font-weight: bold; color: #334155; margin-bottom: 8px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .step-badge { background: #3b82f6; color: white; padding: 2px 7px; border-radius: 4px; font-size: 11px; }
-        .canvas-wrapper {
-            position: relative; width: 100%; height: 280px; background: #0f172a;
-            border-radius: 8px; overflow: hidden; margin-bottom: 12px; cursor: grab; border: 1px solid #cbd5e1; touch-action: none; 
-        }
-        canvas { position: absolute; left: 0; top: 0; }
-        .hud-overlay {
-            position: absolute; top: 50%; left: 50%; width: 60px; height: 60px;
-            transform: translate(-50%, -50%); border: 2px dashed #ef4444; pointer-events: none;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.25);
-        }
-        .hud-center { position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: #ef4444; border-radius: 50%; transform: translate(-50%, -50%); }
-        .btn-main {
-            background: #2563eb; color: white; border: none; padding: 11px; border-radius: 8px;
-            font-size: 13px; font-weight: 600; cursor: pointer; width: 100%; display: flex; justify-content: center; gap: 8px;
-            transition: all 0.2s ease; box-sizing: border-box;
-        }
-        .btn-main:active { background: #1d4ed8; }
-        .btn-secondary {
-            background: #475569; color: white; border: none; padding: 6px 10px; border-radius: 5px; font-size: 11px; cursor: pointer; min-width: 85px;
-            transition: all 0.2s ease;
-        }
-        .input-inline { width: 65px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; font-size: 12px; }
-        
-        .telemetry {
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; 
-            background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 12px;
-            border: 1px solid #e2e8f0; transition: all 0.3s ease;
-        }
-        .telemetry-header { font-size: 14px; font-weight: 800; color: #0f172a; }
-        .telemetry-subheader { font-size: 11px; font-weight: normal; color: #64748b; margin-top: 2px; }
-        
-        .calib-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 6px 0; border-bottom: 1px dashed #e2e8f0; }
-        .locked { opacity: 0.35; pointer-events: none; }
-        .ui-disabled { opacity: 0.25 !important; pointer-events: none !important; cursor: not-allowed !important; }
-        
-        .result-box { background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px; border-radius: 6px; margin-top: 10px; transition: all 0.3s ease; }
-        .result-box.out-of-range { background: #fffbeb !important; border-left: 4px solid #d97706 !important; }
-        
-        .slot-pill { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; margin-left: 3px; }
-        .slot-filled { background: #10b981 !important; }
-        .btn-sm-danger { background: #dc2626; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
-        .btn-sm-success { background: #10b981; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
-        
-        .alert-active { background: #fee2e2 !important; border: 1px solid #f87171 !important; animation: pulse 1.5s infinite; }
-        .alert-active .telemetry-header { color: #991b1b !important; }
-        .alert-active .telemetry-subheader { color: #ef4444 !important; font-weight: bold; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Smart Fe-RGB Analyzer v2</title>
+  <style>
+    :root {
+      --bg: #eef2f6;
+      --surface: #ffffff;
+      --surface-soft: #f7f9fc;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #d9e0ea;
+      --blue: #2563eb;
+      --blue-soft: #e8f0ff;
+      --green: #138a52;
+      --green-soft: #e8f7ef;
+      --amber: #b7791f;
+      --amber-soft: #fff4df;
+      --red: #c93434;
+      --red-soft: #fff0f0;
+      --slate: #263447;
+      --radius: 8px;
+    }
 
-        .qc-warning-text { color: #b45309; font-size: 11px; font-weight: bold; margin-top: 4px; display: none; }
-        
-        .academic-disclaimer {
-            font-size: 10px; color: #64748b; text-align: justify; margin-top: 20px;
-            padding-top: 10px; border-top: 1px solid #e2e8f0; line-height: 1.4;
-        }
+    * { box-sizing: border-box; }
 
-        .export-btn-group {
-            display: flex; flex-direction: column; gap: 6px; margin-top: 12px;
-        }
-        .export-row-top {
-            display: flex; justify-content: space-between; gap: 6px; align-items: center;
-        }
-    </style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      min-height: 34px;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      padding: 7px 8px;
+      min-height: 34px;
+    }
+
+    input[type="checkbox"] {
+      width: auto;
+      min-height: 0;
+    }
+
+    .app {
+      width: min(1260px, 100%);
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 19px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 360px minmax(360px, 1fr) 360px;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-soft);
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .panel-body {
+      padding: 12px;
+    }
+
+    .stack { display: grid; gap: 10px; }
+    .tight { display: grid; gap: 7px; }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .label {
+      display: grid;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      padding: 4px;
+      background: #e5ebf3;
+      border-radius: 8px;
+    }
+
+    .segmented button {
+      background: transparent;
+      color: #445269;
+      min-height: 32px;
+      font-size: 12px;
+    }
+
+    .segmented button.active {
+      background: #fff;
+      color: var(--blue);
+      box-shadow: 0 1px 4px rgba(20, 32, 50, 0.12);
+    }
+
+    .mode-panel {
+      display: none;
+    }
+
+    .mode-panel.active {
+      display: grid;
+      gap: 10px;
+    }
+
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-slate { background: var(--slate); color: #fff; }
+    .btn-amber { background: var(--amber); color: #fff; }
+    .btn-soft { background: #e7edf5; color: var(--slate); }
+    .btn-red { background: var(--red); color: #fff; }
+
+    .btn-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .icon {
+      width: 14px;
+      height: 14px;
+      display: inline-block;
+      flex: 0 0 14px;
+    }
+
+    .model-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: var(--surface-soft);
+      display: grid;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .cal-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: var(--surface-soft);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .full-capture-row {
+      display: grid;
+      grid-template-columns: minmax(110px, 1fr) minmax(120px, 1fr);
+      gap: 8px;
+      align-items: end;
+    }
+
+    .full-range-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr minmax(96px, 0.9fr);
+      gap: 8px;
+      align-items: end;
+    }
+
+    .point-row {
+      display: grid;
+      grid-template-columns: 78px minmax(98px, 1fr) minmax(120px, 1.15fr);
+      gap: 8px;
+      align-items: end;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      background: var(--surface-soft);
+    }
+
+    .point-status {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .point-status-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 31px;
+    }
+
+    .slots {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .slot-pill {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      display: inline-block;
+    }
+
+    .slot-pill.filled { background: #10b981; }
+
+    .mini-stat {
+      color: var(--muted);
+      font-size: 11px;
+      min-height: 14px;
+    }
+
+    .model-active { border-color: #8ab4ff; background: var(--blue-soft); }
+
+    .model-warn { border-color: #efca86; background: var(--amber-soft); }
+
+    .model-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .range-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .mono {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+
+    .canvas-panel {
+      min-height: 610px;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      height: 430px;
+      background: #121826;
+      overflow: hidden;
+      touch-action: none;
+      cursor: grab;
+    }
+
+    .canvas-wrap:active { cursor: grabbing; }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .roi {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: var(--roi-size, 60px);
+      height: var(--roi-size, 60px);
+      transform: translate(-50%, -50%);
+      border: 2px solid #ff4f4f;
+      box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.26);
+      pointer-events: none;
+    }
+
+    .roi:after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 6px;
+      height: 6px;
+      background: #ff4f4f;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .placeholder {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #a9b4c5;
+      font-size: 13px;
+      text-align: center;
+      padding: 20px;
+      pointer-events: none;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 10px;
+      border-top: 1px solid var(--line);
+      background: var(--surface-soft);
+    }
+
+    .telemetry {
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      border-top: 1px solid var(--line);
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      background: #fff;
+      min-width: 0;
+    }
+
+    .metric b {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .metric span {
+      font-size: 15px;
+      font-weight: 800;
+      word-break: break-word;
+    }
+
+    .metric small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .qc {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      margin: 0 12px 12px;
+      border-radius: 8px;
+      padding: 9px;
+      font-size: 12px;
+      background: var(--green-soft);
+      color: #115f3d;
+      border: 1px solid #a9dfc1;
+    }
+
+    .qc.warn {
+      background: var(--amber-soft);
+      color: #7a4b00;
+      border-color: #efca86;
+    }
+
+    .qc.bad {
+      background: var(--red-soft);
+      color: #8b1717;
+      border-color: #f1a4a4;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      background: #fff;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 7px;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      background: var(--surface-soft);
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .sample-summary {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-soft);
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .sample-fields,
+    .sample-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .sample-result {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .result-cell {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px;
+    }
+
+    .result-cell.warn {
+      border-color: #efca86;
+      background: var(--amber-soft);
+    }
+
+    .result-cell b {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .result-cell span {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .method-note {
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.45;
+      text-align: justify;
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+      margin-top: 4px;
+    }
+
+    .flag {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      background: var(--green-soft);
+      color: #14623f;
+    }
+
+    .flag.warn { background: var(--amber-soft); color: #7a4b00; }
+    .flag.bad { background: var(--red-soft); color: #8b1717; }
+
+    .hidden { display: none !important; }
+    .roi-control { display: none; }
+
+    details.advanced {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-soft);
+      padding: 0;
+      overflow: hidden;
+    }
+
+    details.advanced summary {
+      cursor: pointer;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--slate);
+      list-style: none;
+    }
+
+    details.advanced summary::-webkit-details-marker { display: none; }
+
+    .advanced-body {
+      border-top: 1px solid var(--line);
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    @media (max-width: 1080px) {
+      .grid { grid-template-columns: 1fr; }
+      .canvas-panel { min-height: 0; order: -3; }
+      .calibration-panel { order: -2; }
+      .samples-panel { order: -1; }
+      .canvas-wrap { height: 360px; }
+      .telemetry { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 560px) {
+      .app { padding: 8px; }
+      .topbar {
+        align-items: flex-start;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      .brand {
+        display: grid;
+        gap: 2px;
+        flex: 1 1 210px;
+      }
+      h1 { font-size: 18px; max-width: 210px; }
+      .subtitle { display: none; }
+      #resetAllBtn { min-height: 30px; padding: 5px 8px; font-size: 12px; }
+      .segmented { grid-template-columns: repeat(3, 1fr); }
+      .row, .row-3 { grid-template-columns: 1fr; }
+      .range-row,
+      .sample-fields,
+      .sample-actions,
+      .sample-result { grid-template-columns: 1fr 1fr; }
+      .sample-result { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      #mode-equation .row { grid-template-columns: 1fr 1fr; }
+      .full-capture-row { grid-template-columns: minmax(100px, 1fr) minmax(112px, 1fr); }
+      .full-range-row { grid-template-columns: 1fr 1fr 84px; }
+      .point-row { grid-template-columns: 68px 92px minmax(95px, 1fr); gap: 6px; padding: 7px; }
+      .point-row .label { gap: 3px; }
+      .point-row button { padding-left: 6px; padding-right: 6px; }
+      .toolbar { grid-template-columns: 1fr 1fr; padding: 8px; }
+      .canvas-wrap { height: 250px; }
+      .panel-header { padding: 8px 10px; }
+      .panel-body { padding: 9px; }
+      .stack { gap: 8px; }
+      .telemetry { padding: 8px; gap: 6px; }
+      .metric { padding: 6px; }
+      .metric b { font-size: 10px; margin-bottom: 3px; }
+      .metric span { font-size: 13px; }
+      .metric small { font-size: 9px; }
+      .result-cell { padding: 6px; }
+      .result-cell b { font-size: 9px; margin-bottom: 2px; }
+      .result-cell span { font-size: 12px; }
+      .qc { margin: 0 8px 8px; padding: 7px; font-size: 11px; }
+      button { min-height: 31px; font-size: 12px; }
+      input, select { min-height: 31px; padding: 6px 7px; }
+      table { font-size: 11px; }
+      th, td { padding: 5px; }
+    }
+  </style>
 </head>
 <body>
-
-<div class="container">
-    <h2>Smart Fe-RGB Analyzer</h2>
-
-    <div class="canvas-wrapper" id="canvasContainer">
-        <canvas id="imageCanvas"></canvas>
-        <div class="hud-overlay" id="hudOverlayBox"><div class="hud-center"></div></div>
-        <div id="loaderPlaceholder" style="position: absolute; width: 100%; text-align: center; top: 45%; color: #94a3b8; font-size: 12px;">
-            📸 Upload image. Pinch to zoom, drag center to crosshair.
-        </div>
+  <main class="app">
+    <div class="topbar">
+      <div class="brand">
+        <h1>Smart Fe-RGB Analyzer v2</h1>
+        <span class="subtitle">Equation import, full calibration, field two-point modes</span>
+      </div>
+      <button class="btn-soft" id="resetAllBtn" type="button">Reset session</button>
     </div>
 
-    <div class="telemetry" id="telemetryBox">
-        <div>
-            <div class="telemetry-header">RGB: <span id="liveRGB">-, -, -</span></div>
-            <div class="telemetry-subheader"><span id="rgbLabelPrefix">±SD:</span> <span id="liveRGB_SD">-, -, -</span></div>
+    <div class="grid">
+      <section class="panel calibration-panel">
+        <div class="panel-header">
+          <h2>Calibration Model</h2>
+          <span class="flag" id="modelFlag">No model</span>
         </div>
-        <div style="border-left: 1px dashed #cbd5e1; padding-left: 12px;">
-            <div class="telemetry-header">Gray (Y): <span id="liveGray" style="color:#2563eb;">-</span></div>
-            <div class="telemetry-subheader"><span id="grayLabelPrefix">±SD:</span> <span id="liveGray_SD">-</span></div>
+        <div class="panel-body stack">
+          <div class="segmented" role="tablist" aria-label="Calibration mode">
+            <button class="active" type="button" data-mode="equation">Equation</button>
+            <button type="button" data-mode="full">Full curve</button>
+            <button type="button" data-mode="twoPoint">Two-point</button>
+          </div>
+
+          <div class="row">
+            <label class="label">Sensor name
+              <input id="sensorName" placeholder="optional">
+            </label>
+            <label class="label">Signal
+              <select id="signalType">
+                <option value="avgRGB" selected>Average RGB</option>
+                <option value="luma">Luma Y</option>
+                <option value="r">R channel</option>
+                <option value="g">G channel</option>
+                <option value="b">B channel</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="mode-panel active" id="mode-equation">
+            <label class="label">Equation text
+              <input id="equationText" value="Y = -4.2120C + 82.561" readonly>
+            </label>
+            <div class="row">
+              <label class="label">Slope, k
+                <input type="number" id="eqSlope" value="-4.2120" step="0.0001">
+              </label>
+              <label class="label">Intercept, b (blank)
+                <input type="number" id="eqIntercept" value="82.561" step="0.001">
+              </label>
+            </div>
+            <div class="range-row">
+              <label class="label">C range min
+                <input type="number" id="eqMin" value="0" step="0.01">
+              </label>
+              <label class="label">C range max
+                <input type="number" id="eqMax" value="10" step="0.01">
+              </label>
+            </div>
+            <div class="row">
+              <div class="model-box" style="padding:8px;">C = (Y - b) / k</div>
+              <button class="btn-primary" type="button" id="activateEquation">Activate equation</button>
+            </div>
+          </div>
+
+          <div class="mode-panel" id="mode-full">
+            <div class="full-capture-row">
+              <label class="label">Standard C
+                <input type="number" id="stdConc" value="0" step="0.01">
+              </label>
+              <button class="btn-primary btn-icon" type="button" id="captureStandard">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M4 12h3"/><path d="M17 12h3"/><path d="M12 4v3"/><path d="M12 17v3"/></svg>
+                Capture standard
+              </button>
+            </div>
+            <div class="full-range-row">
+              <label class="label">C range min
+                <input type="number" id="fullMin" value="0" step="0.01">
+              </label>
+              <label class="label">C range max
+                <input type="number" id="fullMax" value="10" step="0.01">
+              </label>
+              <button class="btn-soft btn-icon" type="button" id="clearStandards">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                Clear
+              </button>
+            </div>
+            <div class="cal-status">
+              <span id="fullCurveStatus">No standards captured.</span>
+              <span class="mono" id="fullCurveLevels">0 levels</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>C</th><th>n</th><th>Mean signal</th><th>RSD</th><th>Flag</th></tr>
+                </thead>
+                <tbody id="standardRows">
+                  <tr><td colspan="5">No standards captured.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <button class="btn-green btn-icon" type="button" id="fitFullCurve">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M6 16l4-4 3 3 6-8"/></svg>
+              Fit full calibration
+            </button>
+          </div>
+
+          <div class="mode-panel" id="mode-twoPoint">
+            <div class="point-row">
+              <label class="label">P1 C
+                <input type="number" id="tpC1" value="0" step="0.01">
+              </label>
+              <button class="btn-primary btn-icon" type="button" id="captureP1">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M4 12h3"/><path d="M17 12h3"/><path d="M12 4v3"/><path d="M12 17v3"/></svg>
+                Capture P1
+              </button>
+              <div class="point-status" id="p1Box">
+                <div class="point-status-top"><b>P1</b><span class="slots"><i class="slot-pill"></i><i class="slot-pill"></i><i class="slot-pill"></i></span></div>
+                <div class="mini-stat">Waiting for 3 captures.</div>
+              </div>
+            </div>
+            <div class="point-row">
+              <label class="label">P2 C
+                <input type="number" id="tpC2" value="8.47" step="0.01">
+              </label>
+              <button class="btn-primary btn-icon" type="button" id="captureP2">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M4 12h3"/><path d="M17 12h3"/><path d="M12 4v3"/><path d="M12 17v3"/></svg>
+                Capture P2
+              </button>
+              <div class="point-status" id="p2Box">
+                <div class="point-status-top"><b>P2</b><span class="slots"><i class="slot-pill"></i><i class="slot-pill"></i><i class="slot-pill"></i></span></div>
+                <div class="mini-stat">Waiting for 3 captures.</div>
+              </div>
+            </div>
+            <button class="btn-green btn-icon" type="button" id="fitTwoPoint">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l10-8"/><circle cx="7" cy="16" r="2"/><circle cx="17" cy="8" r="2"/></svg>
+              Fit two-point model
+            </button>
+          </div>
+
+          <div class="model-box" id="activeModelBox">
+            <div class="model-line"><b>Active equation</b><span class="mono" id="activeEquation">None</span></div>
+            <div class="model-line"><span>Range</span><span id="activeRange">-</span></div>
+            <div class="model-line"><span>Mode</span><span id="activeMode">-</span></div>
+          </div>
+
+          <details class="advanced">
+            <summary>Advanced</summary>
+            <div class="advanced-body">
+              <label class="label">R2, optional
+                <input type="number" id="eqR2" placeholder="for report only" step="0.0001">
+              </label>
+              <div class="row">
+                <label class="label">Spatial SD threshold
+                  <input type="number" id="spatialLimit" value="40" step="1">
+                </label>
+                <label class="label">RSD threshold (%)
+                  <input type="number" id="rsdLimit" value="5" step="0.5">
+                </label>
+              </div>
+              <label class="label" style="display:flex; grid-template-columns:auto 1fr; align-items:center; gap:7px;">
+                <input type="checkbox" id="blockBadRoi" checked>
+                <span>Block high-spatial-SD captures</span>
+              </label>
+            </div>
+          </details>
         </div>
+      </section>
+
+      <section class="panel canvas-panel">
+        <div class="panel-header">
+          <h2>Image ROI</h2>
+          <span class="flag" id="imageFlag">No image</span>
+        </div>
+        <div class="canvas-wrap" id="canvasWrap">
+          <canvas id="canvas"></canvas>
+          <div class="roi" id="roiBox"></div>
+          <div class="placeholder" id="placeholder">Upload an image, then pan or zoom until the spot is centered.</div>
+        </div>
+        <div class="toolbar">
+          <button class="btn-primary btn-icon" type="button" id="uploadBtn">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+            Upload image
+          </button>
+          <button class="btn-soft btn-icon" type="button" id="fitImageBtn">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+            Fit image
+          </button>
+          <label class="label roi-control">ROI px
+            <input type="number" id="roiSize" value="60" min="20" max="180" step="2">
+          </label>
+        </div>
+        <input type="file" id="imageInput" accept="image/*" class="hidden">
+        <div class="telemetry">
+          <div class="metric"><b>RGB</b><span id="rgbTriple">-, -, -</span><small id="rgbTripleSd">SD -, -, -</small></div>
+          <div class="metric"><b>Signal</b><span id="signalMean">-</span><small id="signalSd">SD -</small></div>
+        </div>
+        <div class="qc" id="roiQc">
+          <span>ROI status: waiting for image.</span>
+          <span class="mono">-</span>
+        </div>
+      </section>
+
+      <section class="panel samples-panel">
+        <div class="panel-header">
+          <h2>Unknown Samples</h2>
+          <span class="flag" id="sampleFlag">n=0</span>
+        </div>
+        <div class="panel-body stack">
+          <div class="sample-fields">
+            <label class="label">Sample ID
+              <input id="sampleId" value="Rust sample">
+            </label>
+            <label class="label">Reference C
+              <input type="number" id="referenceConc" placeholder="optional for recovery" step="0.001">
+            </label>
+          </div>
+          <div class="sample-actions">
+            <button class="btn-green btn-icon" type="button" id="captureSample">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15A8 8 0 1 0 9 19.4"/><path d="M15 19h6"/><path d="M18 16v6"/></svg>
+              Capture
+            </button>
+            <button class="btn-amber btn-icon" type="button" id="storeGroup">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+              Store
+            </button>
+          </div>
+          <div class="sample-actions">
+            <button class="btn-soft btn-icon" type="button" id="clearCurrentGroup">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+              Clear current
+            </button>
+            <button class="btn-red btn-icon" type="button" id="clearAllGroups">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+              Clear logs
+            </button>
+          </div>
+
+          <div class="sample-summary">
+            <div class="sample-result">
+              <div class="result-cell" id="groupConcCell"><b>Estimated C</b><span id="groupConc">-</span></div>
+              <div class="result-cell"><b>SD / RSD</b><span id="groupPrecision">-</span></div>
+              <div class="result-cell"><b>Recovery</b><span id="groupRecovery">-</span></div>
+            </div>
+            <div id="groupFlags" class="tight"></div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>#</th><th>Signal</th><th>Conc.</th><th>Spatial SD</th><th>Flag</th></tr>
+              </thead>
+              <tbody id="spotRows">
+                <tr><td colspan="5">No spots captured.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="row">
+            <button class="btn-slate btn-icon" type="button" id="copyTsv">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy TSV
+            </button>
+            <button class="btn-slate btn-icon" type="button" id="downloadReport">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+              Download report
+            </button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Group</th><th>n</th><th>Mean C</th><th>SD</th><th>Recovery</th></tr>
+              </thead>
+              <tbody id="storedRows">
+                <tr><td colspan="5">No stored groups.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="method-note">
+            <b>Notice &amp; Methodology Scope:</b> This browser-based application functions strictly as a <b>semi-quantitative analyzer</b> designed for the localized estimation of total iron ions via recorded RGB colorimetric values. It is optimized as a lightweight supporting tool for rapid point-of-care screen monitoring. For absolute certified analytical precision and full empirical quantification, high-tier validated laboratory instrumentation (e.g., ICP-MS, Atomic Absorption Spectroscopy) remains strongly recommended.
+          </div>
+        </div>
+      </section>
     </div>
+  </main>
 
-    <input type="file" id="calibImageLoader" accept="image/*" style="display: none;" />
-    <input type="file" id="sampleImageLoader" accept="image/*" style="display: none;" />
+  <script>
+    const state = {
+      mode: "equation",
+      image: null,
+      imageLoaded: false,
+      scale: 1,
+      x: 0,
+      y: 0,
+      dragging: false,
+      dragX: 0,
+      dragY: 0,
+      lastPinch: 0,
+      live: null,
+      model: null,
+      standards: [],
+      p1: [],
+      p2: [],
+      currentSpots: [],
+      storedGroups: [],
+      groupCounter: 0
+    };
 
-    <div class="section-box">
-        <div class="section-title">
-            <span>1. Calibration Rig (n=3 Mode)</span>
-            <span class="step-badge">Step 1</span>
-        </div>
-        
-        <div style="margin-bottom: 12px;">
-            <button class="btn-main" style="background:#2563eb;" onclick="document.getElementById('calibImageLoader').click();">
-                📁 Load Calibration Standard Image
-            </button>
-        </div>
+    const el = (id) => document.getElementById(id);
+    const canvas = el("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const wrap = el("canvasWrap");
 
-        <div class="calib-row">
-            <div>
-                <b>P1 (Low Std.)</b> Conc: <input type="number" id="c1" class="input-inline" value="2.40" step="0.01"> mM
-                <div style="margin-top:2px;">
-                    <span class="slot-pill" id="p1_s1"></span><span class="slot-pill" id="p1_s2"></span><span class="slot-pill" id="p1_s3"></span>
-                </div>
-            </div>
-            <button class="btn-secondary" id="btnAnchorP1" onclick="logTriplePoint(1)">Anchor P1</button>
-        </div>
-        <div style="font-size: 11px; color: #64748b; margin-bottom: 2px;" id="p1Summary">Mean Gray: Waiting for 3 replications...</div>
-        <div class="qc-warning-text" id="p1QCWarning">⚠️ High variance alert among replicates! Check illumination.</div>
+    function mean(values) {
+      return values.reduce((sum, v) => sum + v, 0) / values.length;
+    }
 
-        <div class="calib-row" style="margin-top: 10px;">
-            <div>
-                <b>P2 (High Std.)</b> Conc: <input type="number" id="c2" class="input-inline" value="7.50" step="0.01"> mM
-                <div style="margin-top:2px;">
-                    <span class="slot-pill" id="p2_s1"></span><span class="slot-pill" id="p2_s2"></span><span class="slot-pill" id="p2_s3"></span>
-                </div>
-            </div>
-            <button class="btn-secondary" id="btnAnchorP2" onclick="logTriplePoint(2)">Anchor P2</button>
-        </div>
-        <div style="font-size: 11px; color: #64748b; margin-bottom: 2px;" id="p2Summary">Mean Gray: Waiting for 3 replications...</div>
-        <div class="qc-warning-text" id="p2QCWarning">⚠️ High variance alert among replicates! Check illumination.</div>
+    function sd(values) {
+      if (values.length < 2) return 0;
+      const m = mean(values);
+      return Math.sqrt(values.reduce((sum, v) => sum + Math.pow(v - m, 2), 0) / (values.length - 1));
+    }
 
-        <button class="btn-main" id="btnFitCurve" style="background:#10b981; margin-top:12px;" onclick="generateLinearModel()">
-            🔄 Fit Robust Calibration Curve
-        </button>
-        <div style="font-size: 11px; color: #059669; font-weight: bold; text-align: center; margin-top: 6px;" id="modelStatus">
-            Status: Awaiting Replicate Statistics (Testing Locked)
-        </div>
-    </div>
+    function rsd(values) {
+      const m = mean(values);
+      return m === 0 ? 0 : sd(values) / Math.abs(m) * 100;
+    }
 
-    <div class="section-box locked" id="step2Box">
-        <div class="section-title">
-            <span>2. Smart Target Sample Assay</span>
-            <span class="step-badge" style="background:#10b981;">Step 2</span>
-        </div>
-        
-        <div style="margin-bottom: 10px;">
-            <button class="btn-main" style="background:#4f46e5;" onclick="document.getElementById('sampleImageLoader').click();">
-                📷 Load Current Target Sample Image
-            </button>
-        </div>
+    function fmt(value, digits = 3) {
+      if (value === null || value === undefined || Number.isNaN(value)) return "-";
+      return Number(value).toFixed(digits);
+    }
 
-        <div style="display: flex; gap: 6px; margin-bottom: 10px; align-items: stretch;">
-            <button class="btn-main" id="btnQuantify" style="background:#059669; flex: 2; padding: 8px;" onclick="evaluateUnknownSample()">
-                🔬 Quantify Spot
-            </button>
-            <button class="btn-sm-success" style="flex: 1; font-weight: bold;" id="btnArchive" onclick="archiveCurrentConcentrationGroup()">
-                💾 Store Group
-            </button>
-            <button class="btn-sm-danger" style="flex: 1;" onclick="resetSampleCounter()" title="Discard current group only">
-                🔄 Reset
-            </button>
-        </div>
+    function signalFromSnapshot(snap) {
+      if (!snap) return null;
+      const type = el("signalType").value;
+      if (type === "r") return { mean: snap.rMean, sd: snap.rSD, label: "R" };
+      if (type === "g") return { mean: snap.gMean, sd: snap.gSD, label: "G" };
+      if (type === "b") return { mean: snap.bMean, sd: snap.bSD, label: "B" };
+      if (type === "luma") return { mean: snap.lumaMean, sd: snap.lumaSD, label: "Luma Y" };
+      return { mean: snap.avgRGBMean, sd: snap.avgRGBSD, label: "Average RGB" };
+    }
 
-        <div class="result-box" id="resultUIBox">
-            <div style="display: flex; justify-content: space-between; font-size: 13px;">
-                <span>Assay Status:</span>
-                <span id="assayModeBadge" style="font-weight: bold; color: #2563eb;">Single Screening (n=0)</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: bold; margin-top: 10px; border-top: 1px dashed #cbd5e1; padding-top: 10px; color: #b91c1c;">
-                <span id="resultLabel">Estimated [Fe³⁺]:</span>
-                <span id="finalConcentration">- mM</span>
-            </div>
-            <div style="font-size: 11px; color: #64748b; text-align: left; margin-top: 6px;" id="sampleRawHistory">
-                History Calculated Concentrations: None
-            </div>
-        </div>
+    function maxSpatialSD(snap) {
+      return Math.max(snap.rSD, snap.gSD, snap.bSD, snap.avgRGBSD, snap.lumaSD);
+    }
 
-        <div class="export-btn-group">
-            <div class="export-row-top">
-                <button class="btn-main" style="background:#0f172a; font-size:11px; padding:7px; flex: 3; margin:0;" onclick="exportCompleteDatasets()">
-                    📋 Copy Tabular Text (Origin Ready)
-                </button>
-                <button class="btn-sm-danger" style="background: #94a3b8; padding: 7px 10px; font-size: 10px; flex: 1; height: 100%;" onclick="clearMasterDatabase()" title="Wipe out all exported logs but keep calibration parameters">
-                    🗑️ Wipe Logs
-                </button>
-            </div>
-            <button class="btn-main" style="background:#16a34a; font-size:12px; padding:9px; margin-top: 2px;" onclick="exportToExcelFile()">
-                📊 Download Professional Excel (.xlsx)
-            </button>
-        </div>
-    </div>
+    function concentrationFromSignal(y) {
+      if (!state.model || state.model.k === 0) return null;
+      return (y - state.model.b) / state.model.k;
+    }
 
-    <div class="academic-disclaimer">
-        <b>Notice & Methodology Scope:</b> This browser-based application functions strictly as a <b>semi-quantitative analyzer</b> designed for the localized estimation of total iron ions via recorded RGB colorimetric values. It is optimized as a lightweight supporting tool for rapid point-of-care screen monitoring. For absolute certified analytical precision and full empirical quantification, high-tier validated laboratory instrumentation (e.g., ICP-MS, Atomic Absorption Spectroscopy) remains strongly recommended.
-    </div>
-</div>
+    function currentQcFlag(snap) {
+      if (!snap) return { level: "bad", text: "No ROI data" };
+      const limit = Number(el("spatialLimit").value);
+      const maxSd = maxSpatialSD(snap);
+      if (maxSd > limit) return { level: "bad", text: "High spatial SD" };
+      return { level: "ok", text: "OK" };
+    }
 
-<script>
-    const canvas = document.getElementById('imageCanvas');
-    const ctx = canvas.getContext('2d');
-    const container = document.getElementById('canvasContainer');
-    const calibImageLoader = document.getElementById('calibImageLoader');
-    const sampleImageLoader = document.getElementById('sampleImageLoader');
-    const placeholder = document.getElementById('loaderPlaceholder');
+    function setFlag(node, text, level = "ok") {
+      node.className = "flag" + (level === "warn" ? " warn" : level === "bad" ? " bad" : "");
+      node.textContent = text;
+    }
 
-    let img = new Image();
-    let imgLoaded = false;
-    let imgScale = 1, imgX = 0, imgY = 0;
-    let isDragging = false;
-    let dragStartX = 0, dragStartY = 0;
-    let lastPinchDist = 0;
+    function setActiveMode(mode) {
+      state.mode = mode;
+      document.querySelectorAll(".segmented button").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.mode === mode);
+      });
+      document.querySelectorAll(".mode-panel").forEach((panel) => panel.classList.remove("active"));
+      el("mode-" + mode).classList.add("active");
+      el("activeMode").textContent = mode === "equation" ? "Equation import" : mode === "full" ? "Full calibration" : "Two-point field";
+    }
 
-    let p1Replicates = []; let p2Replicates = [];
-    let p1Final = null, p2Final = null;
-    let modelK = null, modelB = null;
+    function updateRoiSize() {
+      const size = Number(el("roiSize").value) || 60;
+      el("roiBox").style.setProperty("--roi-size", size + "px");
+      render();
+    }
 
-    let targetSampleConcentrations = []; 
-    let currentGroupTelemetryHistory = []; // 用于暂存当前组内的所有像素通道快照，点击Store时再合流大数据库
-    let isAreaInvalid = false; 
-    const roiSize = 60;
+    function resizeCanvas() {
+      canvas.width = wrap.clientWidth;
+      canvas.height = wrap.clientHeight;
+      render();
+    }
 
-    // 已归档的历史记录计数器
-    let archivedGroupCounter = 0;
-
-    // --- Master Data Memory Struct for Excel Export ---
-    let masterAnalyticalLog = [];
-    // 专门保存每个 Group 汇总统计（Mean, SD）的大数据库
-    let masterGroupSummaryLog = [];
-
-    // Storage references for latest calculated live parameters
-    let activeTelemetrySnapshot = null;
-
-    calibImageLoader.addEventListener('change', (e) => { if(e.target.files[0]) executeImageLoading(e.target.files[0]); }, false);
-    sampleImageLoader.addEventListener('change', (e) => { if(e.target.files[0]) executeImageLoading(e.target.files[0]); }, false);
-
-    function executeImageLoading(fileObject) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            img = new Image();
-            img.onload = function() {
-                placeholder.style.display = 'none';
-                imgLoaded = true;
-                imgScale = 400 / img.width;
-                imgX = (container.clientWidth - img.width * imgScale) / 2;
-                imgY = (container.clientHeight - img.height * imgScale) / 2;
-                render();
-            }
-            img.src = event.target.result;
-        }
-        if(fileObject) reader.readAsDataURL(fileObject);
+    function fitImageToCanvas() {
+      if (!state.imageLoaded) return;
+      const sx = canvas.width / state.image.width;
+      const sy = canvas.height / state.image.height;
+      state.scale = Math.min(sx, sy);
+      state.x = (canvas.width - state.image.width * state.scale) / 2;
+      state.y = (canvas.height - state.image.height * state.scale) / 2;
+      render();
     }
 
     function render() {
-        if (!imgLoaded) return;
-        canvas.width = container.clientWidth; canvas.height = container.clientHeight;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, imgX, imgY, img.width * imgScale, img.height * imgScale);
-        processLivePixels();
+      if (!canvas.width || !canvas.height) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#121826";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (!state.imageLoaded) {
+        state.live = null;
+        updateTelemetry();
+        return;
+      }
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(state.image, state.x, state.y, state.image.width * state.scale, state.image.height * state.scale);
+      processRoi();
     }
 
-    function processLivePixels() {
-        const centerX = canvas.width / 2; const centerY = canvas.height / 2;
-        const startROI_X = centerX - roiSize / 2; const startROI_Y = centerY - roiSize / 2;
-        try {
-            const imgData = ctx.getImageData(startROI_X, startROI_Y, roiSize, roiSize);
-            const data = imgData.data;
-            const totalPixels = roiSize * roiSize;
+    function processRoi() {
+      const size = Number(el("roiSize").value) || 60;
+      const startX = Math.round(canvas.width / 2 - size / 2);
+      const startY = Math.round(canvas.height / 2 - size / 2);
+      if (startX < 0 || startY < 0 || startX + size > canvas.width || startY + size > canvas.height) {
+        state.live = null;
+        updateTelemetry();
+        return;
+      }
 
-            let rSum = 0, gSum = 0, bSum = 0, graySum = 0;
-            let rValues = [], gValues = [], bValues = [], grayValues = [];
+      const imgData = ctx.getImageData(startX, startY, size, size).data;
+      const n = size * size;
+      const r = [], g = [], b = [], avg = [], luma = [];
+      for (let i = 0; i < imgData.length; i += 4) {
+        const rv = imgData[i];
+        const gv = imgData[i + 1];
+        const bv = imgData[i + 2];
+        r.push(rv);
+        g.push(gv);
+        b.push(bv);
+        avg.push((rv + gv + bv) / 3);
+        luma.push(0.299 * rv + 0.587 * gv + 0.114 * bv);
+      }
 
-            for (let i = 0; i < data.length; i += 4) {
-                let r = data[i]; let g = data[i+1]; let b = data[i+2];
-                let y = (r + g + b) / 3;
-                rSum += r; gSum += g; bSum += b; graySum += y;
-                rValues.push(r); gValues.push(g); bValues.push(b); grayValues.push(y);
-            }
-
-            const avgRNum = rSum / totalPixels; const avgGNum = gSum / totalPixels;
-            const avgBNum = bSum / totalPixels; const avgGrayNum = graySum / totalPixels;
-
-            let rVarSum = 0, gVarSum = 0, bVarSum = 0, grayVarSum = 0;
-            for (let j = 0; j < totalPixels; j++) {
-                rVarSum += Math.pow(rValues[j] - avgRNum, 2);
-                gVarSum += Math.pow(gValues[j] - avgGNum, 2);
-                bVarSum += Math.pow(bValues[j] - avgBNum, 2);
-                grayVarSum += Math.pow(grayValues[j] - avgGrayNum, 2);
-            }
-
-            const sdR = Math.sqrt(rVarSum / (totalPixels - 1));
-            const sdG = Math.sqrt(gVarSum / (totalPixels - 1));
-            const sdB = Math.sqrt(bVarSum / (totalPixels - 1));
-            const sdGray = Math.sqrt(grayVarSum / (totalPixels - 1));
-
-            document.getElementById('liveRGB').innerText = `${avgRNum.toFixed(1)}, ${avgGNum.toFixed(1)}, ${avgBNum.toFixed(1)}`;
-            document.getElementById('liveGray').innerText = avgGrayNum.toFixed(2);
-            document.getElementById('liveRGB_SD').innerText = `${sdR.toFixed(1)}, ${sdG.toFixed(1)}, ${sdB.toFixed(1)}`;
-            document.getElementById('liveGray_SD').innerText = `±${sdGray.toFixed(2)}`;
-
-            activeTelemetrySnapshot = {
-                rMean: avgRNum, gMean: avgGNum, bMean: avgBNum, grayMean: avgGrayNum,
-                rSD: sdR, gSD: sdG, bSD: sdB, graySD: sdGray
-            };
-
-            const telemetryBox = document.getElementById('telemetryBox');
-            const grayLabelPrefix = document.getElementById('grayLabelPrefix');
-            const rgbLabelPrefix = document.getElementById('rgbLabelPrefix');
-            const GLOBAL_MAX_THRESHOLD = 40.0; 
-
-            if (sdR > GLOBAL_MAX_THRESHOLD || sdG > GLOBAL_MAX_THRESHOLD || sdB > GLOBAL_MAX_THRESHOLD || sdGray > GLOBAL_MAX_THRESHOLD) {
-                isAreaInvalid = true;
-                telemetryBox.classList.add('alert-active');
-                grayLabelPrefix.innerText = "⚠️ BOUNDARY"; rgbLabelPrefix.innerText = "⚠️ ER";
-                document.getElementById('btnAnchorP1').classList.add('ui-disabled');
-                document.getElementById('btnAnchorP2').classList.add('ui-disabled');
-                document.getElementById('btnQuantify').classList.add('ui-disabled');
-            } else {
-                isAreaInvalid = false;
-                telemetryBox.classList.remove('alert-active');
-                grayLabelPrefix.innerText = "±SD:"; rgbLabelPrefix.innerText = "±SD:";
-                document.getElementById('btnAnchorP1').classList.remove('ui-disabled');
-                document.getElementById('btnAnchorP2').classList.remove('ui-disabled');
-                document.getElementById('btnQuantify').classList.remove('ui-disabled');
-            }
-            return avgGrayNum;
-        } catch (e) { return null; }
+      state.live = {
+        pixelCount: n,
+        roiSize: size,
+        rMean: mean(r), rSD: sd(r),
+        gMean: mean(g), gSD: sd(g),
+        bMean: mean(b), bSD: sd(b),
+        avgRGBMean: mean(avg), avgRGBSD: sd(avg),
+        lumaMean: mean(luma), lumaSD: sd(luma)
+      };
+      updateTelemetry();
     }
 
-    function logTriplePoint(pointNum) {
-        if (!imgLoaded || isAreaInvalid || !activeTelemetrySnapshot) return;
-        const currentGray = activeTelemetrySnapshot.grayMean;
+    function updateTelemetry() {
+      const snap = state.live;
+      const sig = signalFromSnapshot(snap);
+      el("rgbTriple").textContent = snap ? `${fmt(snap.rMean, 1)}, ${fmt(snap.gMean, 1)}, ${fmt(snap.bMean, 1)}` : "-, -, -";
+      el("rgbTripleSd").textContent = snap ? `SD ${fmt(snap.rSD, 1)}, ${fmt(snap.gSD, 1)}, ${fmt(snap.bSD, 1)}` : "SD -, -, -";
+      el("signalMean").textContent = sig ? fmt(sig.mean, 2) : "-";
+      el("signalSd").textContent = sig ? sig.label + " SD " + fmt(sig.sd, 2) : "SD -";
 
-        let arr = (pointNum === 1) ? p1Replicates : p2Replicates;
-        let prefix = (pointNum === 1) ? 'p1_' : 'p2_';
-        let warningUI = document.getElementById((pointNum === 1) ? 'p1QCWarning' : 'p2QCWarning');
-
-        if (arr.length >= 3) {
-            if(confirm(`Point P${pointNum} matrix is full. Reset and re-log?`)) {
-                arr.length = 0;
-                warningUI.style.display = "none";
-                for(let i=1; i<=3; i++) document.getElementById(`${prefix}s${i}`).classList.remove('slot-filled');
-            } else { return; }
-        }
-
-        arr.push(currentGray);
-        document.getElementById(`${prefix}s${arr.length}`).classList.add('slot-filled');
-
-        let nominalConc = parseFloat(document.getElementById((pointNum === 1) ? 'c1' : 'c2').value);
-        masterAnalyticalLog.push({
-            stage: `Calibration_P${pointNum}_Repl_${arr.length}`,
-            groupName: `Calibration_P${pointNum}`,
-            nominalConc: nominalConc,
-            estConcSD: 0, 
-            ...activeTelemetrySnapshot
-        });
-
-        let sum = arr.reduce((a, b) => a + b, 0);
-        let avg = sum / arr.length;
-        document.getElementById((pointNum === 1) ? 'p1Summary' : 'p2Summary').innerHTML = `Logged [${arr.length}/3]. Current Avg Gray: <b>${avg.toFixed(2)}</b>`;
-
-        if (arr.length === 3) {
-            let mean = sum / 3;
-            let varianceSum = arr.reduce((a, b) => a + Math.pow(b - mean, 2), 0);
-            let besselSD = Math.sqrt(varianceSum / 2);
-            let rsdPercent = (besselSD / mean) * 100;
-
-            if (rsdPercent > 5.0) {
-                warningUI.innerText = `⚠️ Imprecision Alert: RSD is ${rsdPercent.toFixed(1)}%. Re-logging recommended for robust curve.`;
-                warningUI.style.display = "block";
-            } else {
-                warningUI.style.display = "none";
-            }
-
-            if (pointNum === 1) p1Final = { conc: nominalConc, grayMean: mean, sd: besselSD }; 
-            else p2Final = { conc: nominalConc, grayMean: mean, sd: besselSD };
-        }
+      const qc = el("roiQc");
+      if (!snap) {
+        qc.className = "qc bad";
+        qc.children[0].textContent = "ROI status: waiting for valid image area.";
+        qc.children[1].textContent = "-";
+        return;
+      }
+      const flag = currentQcFlag(snap);
+      const maxSd = maxSpatialSD(snap);
+      qc.className = "qc" + (flag.level === "bad" ? " bad" : flag.level === "warn" ? " warn" : "");
+      qc.children[0].textContent = "ROI status: " + flag.text;
+      qc.children[1].textContent = "max SD " + fmt(maxSd, 2);
     }
 
-    function generateLinearModel() {
-        if (!p1Final || !p2Final) { alert("Matrix Incomplete: Replicates missing."); return; }
-        modelK = (p2Final.grayMean - p1Final.grayMean) / (p2Final.conc - p1Final.conc);
-        modelB = p1Final.grayMean - modelK * p1Final.conc;
-
-        document.getElementById('step2Box').classList.remove('locked');
-        document.getElementById('modelStatus').innerHTML = `Active Model: Gray = (${modelK.toFixed(3)} * Conc) + ${modelB.toFixed(2)}`;
-        alert("Analytical model established successfully!");
+    function assertCaptureAllowed() {
+      if (!state.live) {
+        alert("No valid ROI data is available.");
+        return false;
+      }
+      const flag = currentQcFlag(state.live);
+      if (flag.level === "bad" && el("blockBadRoi").checked) {
+        alert("ROI spatial SD exceeds the selected threshold.");
+        return false;
+      }
+      return true;
     }
 
-    function evaluateUnknownSample() {
-        if (modelK === null || modelB === null || isAreaInvalid || !activeTelemetrySnapshot) return;
-        const currentGray = activeTelemetrySnapshot.grayMean;
-
-        let calcConc = (currentGray - modelB) / modelK;
-        if (calcConc < 0) calcConc = 0; 
-
-        targetSampleConcentrations.push(calcConc);
-        currentGroupTelemetryHistory.push({ ...activeTelemetrySnapshot });
-        
-        const sampleCount = targetSampleConcentrations.length;
-
-        let concSum = targetSampleConcentrations.reduce((a, b) => a + b, 0);
-        let concMean = concSum / sampleCount;
-
-        let uncertaintyText = "";
-        let finalSDVal = 0;
-
-        if (sampleCount === 1) {
-            document.getElementById('assayModeBadge').innerText = `Rapid Screening Mode (n=1)`;
-            document.getElementById('assayModeBadge').style.color = "#df8a14";
-            uncertaintyText = "± 0.00"; 
-        } else {
-            document.getElementById('assayModeBadge').innerText = `High-Precision Mode (n=${sampleCount})`;
-            document.getElementById('assayModeBadge').style.color = "#10b981";
-            let concVarSum = targetSampleConcentrations.reduce((a, b) => a + Math.pow(b - concMean, 2), 0);
-            finalSDVal = Math.sqrt(concVarSum / (sampleCount - 1));
-            uncertaintyText = `± ${finalSDVal.toFixed(2)}`;
-        }
-
-        const resultUIBox = document.getElementById('resultUIBox');
-        const lowBound = Math.min(p1Final.conc, p2Final.conc);
-        const highBound = Math.max(p1Final.conc, p2Final.conc);
-
-        if (concMean < lowBound || concMean > highBound) {
-            resultUIBox.classList.add('out-of-range');
-            document.getElementById('resultLabel').innerHTML = `Estimated [Fe³⁺] <span style='font-size:10px; color:#d97706;'>[Out of Range]</span>:`;
-        } else {
-            resultUIBox.classList.remove('out-of-range');
-            document.getElementById('resultLabel').innerText = `Estimated [Fe³⁺]:`;
-        }
-
-        document.getElementById('finalConcentration').innerText = `${concMean.toFixed(2)} ${uncertaintyText} mM`;
-        let formattedHistory = targetSampleConcentrations.map(c => c.toFixed(2) + " mM").join(', ');
-        document.getElementById('sampleRawHistory').innerText = `Logged Trial Concs: [${formattedHistory}]`;
+    function buildModel(k, b, cMin, cMax, mode, r2, sourceRows) {
+      state.model = {
+        sensor: el("sensorName").value,
+        signalType: el("signalType").value,
+        k,
+        b,
+        cMin,
+        cMax,
+        mode,
+        r2: r2 ?? null,
+        sourceRows: sourceRows || [],
+        createdAt: new Date().toISOString()
+      };
+      updateModelUI();
+      updateGroupSummary();
     }
 
-    function archiveCurrentConcentrationGroup() {
-        if (targetSampleConcentrations.length === 0) {
-            alert("No data points collected in the current group to store!");
-            return;
-        }
-
-        archivedGroupCounter++;
-        let currentGroupName = `Group_${archivedGroupCounter}`;
-        
-        let concSum = targetSampleConcentrations.reduce((a, b) => a + b, 0);
-        let concMean = concSum / targetSampleConcentrations.length;
-        
-        let finalSDVal = 0;
-        if (targetSampleConcentrations.length > 1) {
-            let concVarSum = targetSampleConcentrations.reduce((a, b) => a + Math.pow(b - concMean, 2), 0);
-            finalSDVal = Math.sqrt(concVarSum / (targetSampleConcentrations.length - 1));
-        }
-
-        // 计算当前组所有测定点的 Gray 均值
-        let graySum = currentGroupTelemetryHistory.reduce((sum, t) => sum + t.grayMean, 0);
-        let grayMeanAll = graySum / currentGroupTelemetryHistory.length;
-
-        // 保存统计特征到主统计库
-        masterGroupSummaryLog.push({
-            groupName: currentGroupName,
-            n: targetSampleConcentrations.length,
-            meanConc: concMean,
-            sdConc: finalSDVal,
-            meanGray: grayMeanAll
-        });
-
-        // 将每个点的细节打散，存入细分数据库
-        targetSampleConcentrations.forEach((conc, index) => {
-            let telemetry = currentGroupTelemetryHistory[index];
-            masterAnalyticalLog.push({
-                stage: `${currentGroupName}_Spot_${index + 1}`,
-                groupName: currentGroupName,
-                nominalConc: conc, // 单点计算值
-                estConcSD: finalSDVal, // 组内变异差
-                ...telemetry
-            });
-        });
-
-        alert(`Success: Group #${archivedGroupCounter} (n=${targetSampleConcentrations.length}, Mean=${concMean.toFixed(2)} mM) has been safely locked into the master database.\n\nCurrent workspace is now automatically cleared for your next concentration sample!`);
-        
-        targetSampleConcentrations = [];
-        currentGroupTelemetryHistory = [];
-        clearUIFields();
+    function updateModelUI() {
+      const box = el("activeModelBox");
+      if (!state.model) {
+        box.classList.remove("model-active");
+        box.classList.remove("model-warn");
+        el("activeEquation").textContent = "None";
+        el("activeRange").textContent = "-";
+        setFlag(el("modelFlag"), "No model", "bad");
+        return;
+      }
+      box.classList.add("model-active");
+      box.classList.remove("model-warn");
+      const m = state.model;
+      const sign = m.b < 0 ? "-" : "+";
+      el("activeEquation").textContent = "Y = " + fmt(m.k, 4) + "C " + sign + " " + fmt(Math.abs(m.b), 3);
+      el("activeRange").textContent = fmt(m.cMin, 2) + " to " + fmt(m.cMax, 2);
+      el("activeMode").textContent = m.mode;
+      setFlag(el("modelFlag"), "Model active", "ok");
     }
 
-    function resetSampleCounter() {
-        if (targetSampleConcentrations.length === 0) return;
-        if (confirm("Discard all clicked points in the CURRENT active group? (Stored history database remains perfectly safe)")) {
-            targetSampleConcentrations = [];
-            currentGroupTelemetryHistory = [];
-            clearUIFields();
-        }
+    function updateEquationPreview() {
+      const k = Number(el("eqSlope").value);
+      const b = Number(el("eqIntercept").value);
+      if (!Number.isFinite(k) || !Number.isFinite(b)) {
+        el("equationText").value = "Y = kC + b";
+        return;
+      }
+      const sign = b < 0 ? "-" : "+";
+      el("equationText").value = `Y = ${k.toFixed(4)}C ${sign} ${Math.abs(b).toFixed(3)}`;
     }
 
-    function clearUIFields() {
-        document.getElementById('resultUIBox').classList.remove('out-of-range');
-        document.getElementById('resultLabel').innerText = `Estimated [Fe³⁺]:`;
-        document.getElementById('assayModeBadge').innerText = `Single Screening (n=0)`;
-        document.getElementById('assayModeBadge').style.color = "#2563eb";
-        document.getElementById('finalConcentration').innerText = "- mM";
-        document.getElementById('sampleRawHistory').innerText = "History calculated concentrations: None";
+    function activateEquation() {
+      const k = Number(el("eqSlope").value);
+      const b = Number(el("eqIntercept").value);
+      const cMin = Number(el("eqMin").value);
+      const cMax = Number(el("eqMax").value);
+      const r2 = el("eqR2").value === "" ? null : Number(el("eqR2").value);
+      if (!Number.isFinite(k) || !Number.isFinite(b) || k === 0) {
+        alert("Enter a valid non-zero slope and intercept.");
+        return;
+      }
+      updateEquationPreview();
+      buildModel(k, b, cMin, cMax, "Equation import", r2, []);
     }
 
-    function clearMasterDatabase() {
-        if (masterAnalyticalLog.length === 0 && masterGroupSummaryLog.length === 0) {
-            alert("Master export log is already empty.");
-            return;
-        }
-        if (confirm("🚨 WARNING: You are executing a master log clear!\nThis will delete ALL archived groups from the export memory. However, your calibrated slope and intercept will be perfectly preserved. Proceed?")) {
-            masterAnalyticalLog = [];
-            masterGroupSummaryLog = [];
-            archivedGroupCounter = 0;
-            alert("Historical grand logs cleared. Linear calibration model is still active!");
-        }
+    function captureStandard() {
+      if (!assertCaptureAllowed()) return;
+      const conc = Number(el("stdConc").value);
+      if (!Number.isFinite(conc)) {
+        alert("Enter a standard concentration.");
+        return;
+      }
+      const sig = signalFromSnapshot(state.live);
+      state.standards.push(makeSpotRecord("STD_" + (state.standards.length + 1), "Calibration", conc, sig.mean));
+      renderStandards();
     }
 
-    // 原始表格文字复制功能：加入了拟合参数和均值信息的头部回显
-    function exportCompleteDatasets() {
-        if (masterAnalyticalLog.length === 0) {
-            alert("Export Matrix Empty: Store finalized concentration groups first.");
-            return;
-        }
-
-        let txtRows = [];
-        txtRows.push("# --- SMART Fe-RGB ANALYZER REPORT ---");
-        txtRows.push(`# Date: ${new Date().toLocaleString()}`);
-        if(modelK !== null) {
-            txtRows.push(`# Calibration Model: Gray = (${modelK.toFixed(4)} * Conc) + ${modelB.toFixed(2)}`);
-            txtRows.push(`# Curve Parameters: Slope = ${modelK.toFixed(4)}\tIntercept = ${modelB.toFixed(2)}`);
-        }
-        txtRows.push("");
-        
-        txtRows.push("# --- SECTION 1: GROUP STATISTICAL SUMMARY ---");
-        txtRows.push("Group_ID\tReplicates_n\tMean_Concentration(mM)\tSD_Concentration(mM)\tMean_Gray_Value");
-        masterGroupSummaryLog.forEach(g => {
-            txtRows.push(`${g.groupName}\t${g.n}\t${g.meanConc.toFixed(3)}\t${g.sdConc.toFixed(3)}\t${g.meanGray.toFixed(2)}`);
-        });
-        
-        txtRows.push("");
-        txtRows.push("# --- SECTION 2: RAW SPOT METRIC MATRIX ---");
-        txtRows.push("Data_Point_ID\tBelonging_Group\tConc_Calculated(mM)\tGroup_SD_Uncertainty(mM)\tMean_Gray\tSpatial_SD_Gray\tMean_R\tSpatial_SD_R\tMean_G\tSpatial_SD_G\tMean_B\tSpatial_SD_B");
-
-        masterAnalyticalLog.forEach(row => {
-            let line = `${row.stage}\t` +
-                       `${row.groupName}\t` +
-                       `${row.nominalConc.toFixed(3)}\t` +
-                       `${row.estConcSD.toFixed(3)}\t` +
-                       `${row.grayMean.toFixed(3)}\t` +
-                       `${row.graySD.toFixed(3)}\t` +
-                       `${row.rMean.toFixed(3)}\t` +
-                       `${row.rSD.toFixed(3)}\t` +
-                       `${row.gMean.toFixed(3)}\t` +
-                       `${row.gSD.toFixed(3)}\t` +
-                       `${row.bMean.toFixed(3)}\t` +
-                       `${row.bSD.toFixed(3)}`;
-            txtRows.push(line);
-        });
-
-        let outputString = txtRows.join("\n");
-
-        navigator.clipboard.writeText(outputString).then(() => {
-            alert(`🔥 Academic Log Exported!\nTotal logged entries: ${masterAnalyticalLog.length}\nData copied to clipboard. Go to Excel or Origin and press Ctrl+V directly!`);
-        }).catch(err => {
-            console.error("Clipboard failure: ", err);
-            alert("Clipboard restricted. Raw data stream:\n\n" + outputString);
-        });
+    function makeSpotRecord(id, group, reference, signalValue) {
+      const snap = { ...state.live };
+      const sig = signalFromSnapshot(snap);
+      return {
+        id,
+        group,
+        sampleId: el("sampleId").value,
+        referenceConc: reference,
+        signal: signalValue ?? sig.mean,
+        signalSD: sig.sd,
+        signalType: el("signalType").value,
+        rMean: snap.rMean, rSD: snap.rSD,
+        gMean: snap.gMean, gSD: snap.gSD,
+        bMean: snap.bMean, bSD: snap.bSD,
+        avgRGBMean: snap.avgRGBMean, avgRGBSD: snap.avgRGBSD,
+        lumaMean: snap.lumaMean, lumaSD: snap.lumaSD,
+        maxSpatialSD: maxSpatialSD(snap),
+        qc: currentQcFlag(snap).text,
+        capturedAt: new Date().toISOString()
+      };
     }
 
-    /**
-     * 核心库功能：直接从网页下载原生的、经过精细排版的 Excel 文件 (.xlsx)
-     */
-    function exportToExcelFile() {
-        if (masterAnalyticalLog.length === 0) {
-            alert("Export Matrix Empty: Please lock and store target groups first.");
-            return;
-        }
-
-        // 创建新的工作簿
-        const wb = XLSX.utils.book_new();
-
-        // --- SHEET 1: 拟合曲线与统计分组快报 ---
-        let summaryData = [];
-        summaryData.push(["SMART Fe-RGB ANALYZER REPORT", ""]);
-        summaryData.push(["Export Timestamp:", new Date().toLocaleString()]);
-        summaryData.push(["", ""]);
-        
-        summaryData.push(["[PART A: LINEAR CALIBRATION PARAMETERS]", ""]);
-        summaryData.push(["Slope (斜率, k):", modelK !== null ? parseFloat(modelK.toFixed(5)) : "N/A"]);
-        summaryData.push(["Intercept (截距, b):", modelB !== null ? parseFloat(modelB.toFixed(3)) : "N/A"]);
-        summaryData.push(["Equation:", modelK !== null ? `Gray = ${modelK.toFixed(4)} * [Fe³⁺] + ${modelB.toFixed(2)}` : "N/A"]);
-        summaryData.push(["", ""]);
-
-        summaryData.push(["[PART B: GROUP STATISTICAL SUMMARY]", "", "", "", ""]);
-        summaryData.push(["Group ID", "Replicates (n)", "Mean Concentration (mM)", "Standard Deviation (SD)", "Mean Gray Value (Y)"]);
-        
-        masterGroupSummaryLog.forEach(g => {
-            summaryData.push([
-                g.groupName, 
-                g.n, 
-                parseFloat(g.meanConc.toFixed(4)), 
-                parseFloat(g.sdConc.toFixed(4)), 
-                parseFloat(g.meanGray.toFixed(2))
-            ]);
-        });
-
-        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
-        XLSX.utils.book_append_sheet(wb, wsSummary, "Summary & Model");
-
-        // --- SHEET 2: 所有单点(Spots)的全通道原始矩阵 ---
-        let rawDataRows = [];
-        // 表头
-        rawDataRows.push([
-            "Data Point ID", "Belonging Group", "Calculated Conc (mM)", "Group SD (mM)", 
-            "Mean Gray (Y)", "Spatial SD Gray", "Mean R", "Spatial SD R", 
-            "Mean G", "Spatial SD G", "Mean B", "Spatial SD B"
-        ]);
-
-        masterAnalyticalLog.forEach(row => {
-            rawDataRows.push([
-                row.stage,
-                row.groupName,
-                parseFloat(row.nominalConc.toFixed(4)),
-                parseFloat(row.estConcSD.toFixed(4)),
-                parseFloat(row.grayMean.toFixed(3)),
-                parseFloat(row.graySD.toFixed(3)),
-                parseFloat(row.rMean.toFixed(2)),
-                parseFloat(row.rSD.toFixed(2)),
-                parseFloat(row.gMean.toFixed(2)),
-                parseFloat(row.gSD.toFixed(2)),
-                parseFloat(row.bMean.toFixed(2)),
-                parseFloat(row.bSD.toFixed(2))
-            ]);
-        });
-
-        const wsRaw = XLSX.utils.aoa_to_sheet(rawDataRows);
-        XLSX.utils.book_append_sheet(wb, wsRaw, "Raw Spot Matrix");
-
-        // 执行文件下载
-        let fileName = `Fe_RGB_Analysis_Report_${new Date().toISOString().slice(0,10)}.xlsx`;
-        XLSX.writeFile(wb, fileName);
+    function groupedStandards() {
+      const map = new Map();
+      state.standards.forEach((row) => {
+        const key = String(row.referenceConc);
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(row);
+      });
+      return [...map.entries()].map(([key, rows]) => {
+        const signals = rows.map((r) => r.signal);
+        const maxSd = Math.max(...rows.map((r) => r.maxSpatialSD));
+        const hasBad = rows.some((r) => r.qc !== "OK");
+        return {
+          referenceConc: Number(key),
+          n: rows.length,
+          signal: mean(signals),
+          signalSD: sd(signals),
+          rsdPercent: rsd(signals),
+          maxSpatialSD: maxSd,
+          qc: hasBad ? "Check" : "OK",
+          rows
+        };
+      }).sort((a, b) => a.referenceConc - b.referenceConc);
     }
 
-    // Touch Navigation Rig for Mobile Zoom & Pan Support
-    function getDistance(touches) { return Math.sqrt(Math.pow(touches[0].clientX - touches[1].clientX, 2) + Math.pow(touches[0].clientY - touches[1].clientY, 2)); }
-    container.addEventListener('mousedown', (e) => { if (!imgLoaded) return; isDragging = true; dragStartX = e.clientX - imgX; dragStartY = e.clientY - imgY; });
-    window.addEventListener('mouseup', () => { isDragging = false; });
-    container.addEventListener('mousemove', (e) => { if (!isDragging || !imgLoaded) return; imgX = e.clientX - dragStartX; imgY = e.clientY - dragStartY; render(); });
-    container.addEventListener('wheel', (e) => {
-        if (!imgLoaded) return; e.preventDefault();
-        const oldScale = imgScale; const scaleChange = e.deltaY > 0 ? 0.92 : 1.08; imgScale *= scaleChange;
-        imgX = (container.clientWidth/2) - ((container.clientWidth/2) - imgX) * (imgScale / oldScale);
-        imgY = (container.clientHeight/2) - ((container.clientHeight/2) - imgY) * (imgScale / oldScale);
+    function renderStandards() {
+      const body = el("standardRows");
+      const groups = groupedStandards();
+      el("fullCurveStatus").textContent = state.standards.length
+        ? `${state.standards.length} captured spot${state.standards.length === 1 ? "" : "s"}`
+        : "No standards captured.";
+      el("fullCurveLevels").textContent = `${groups.length} level${groups.length === 1 ? "" : "s"}`;
+      if (!groups.length) {
+        body.innerHTML = '<tr><td colspan="5">No standards captured.</td></tr>';
+        return;
+      }
+      body.innerHTML = groups.map((row) => {
+        const level = row.qc === "OK" ? "ok" : "bad";
+        const rsdText = row.n > 1 ? fmt(row.rsdPercent, 1) + "%" : "-";
+        return `<tr><td>${fmt(row.referenceConc, 3)}</td><td>${row.n}</td><td>${fmt(row.signal, 3)}</td><td>${rsdText}</td><td><span class="flag ${level === "bad" ? "bad" : ""}">${row.qc}</span></td></tr>`;
+      }).join("");
+    }
+
+    function linearRegression(rows) {
+      const xs = rows.map((r) => r.referenceConc);
+      const ys = rows.map((r) => r.signal);
+      const xMean = mean(xs);
+      const yMean = mean(ys);
+      const ssx = xs.reduce((sum, x) => sum + Math.pow(x - xMean, 2), 0);
+      if (ssx === 0) return null;
+      const k = xs.reduce((sum, x, i) => sum + (x - xMean) * (ys[i] - yMean), 0) / ssx;
+      const b = yMean - k * xMean;
+      const ssRes = ys.reduce((sum, y, i) => sum + Math.pow(y - (k * xs[i] + b), 2), 0);
+      const ssTot = ys.reduce((sum, y) => sum + Math.pow(y - yMean, 2), 0);
+      const r2 = ssTot === 0 ? null : 1 - ssRes / ssTot;
+      return { k, b, r2 };
+    }
+
+    function fitFullCurve() {
+      const groups = groupedStandards();
+      if (groups.length < 2) {
+        alert("Capture at least two concentration levels.");
+        return;
+      }
+      const fit = linearRegression(groups);
+      if (!fit) {
+        alert("Calibration concentrations must not all be identical.");
+        return;
+      }
+      const cMin = Number(el("fullMin").value);
+      const cMax = Number(el("fullMax").value) || Math.max(...groups.map((r) => r.referenceConc));
+      buildModel(fit.k, fit.b, Number.isFinite(cMin) ? cMin : Math.min(...groups.map((r) => r.referenceConc)), cMax, "Full calibration", fit.r2, state.standards);
+    }
+
+    function captureTwoPoint(which) {
+      if (!assertCaptureAllowed()) return;
+      const sig = signalFromSnapshot(state.live);
+      const arr = which === 1 ? state.p1 : state.p2;
+      if (arr.length >= 3) arr.length = 0;
+      arr.push(makeSpotRecord(which === 1 ? "P1_" + arr.length : "P2_" + arr.length, which === 1 ? "P1" : "P2", which === 1 ? Number(el("tpC1").value) : Number(el("tpC2").value), sig.mean));
+      updateTwoPointUI();
+    }
+
+    function updateTwoPointUI() {
+      function paintBox(boxId, arr, label, concValue) {
+        const box = el(boxId);
+        const slots = box.querySelectorAll(".slot-pill");
+        slots.forEach((slot, index) => slot.classList.toggle("filled", index < arr.length));
+        const stat = box.querySelector(".mini-stat");
+        const title = box.querySelector("b");
+        title.textContent = `${label} C=${concValue}`;
+        if (!arr.length) {
+          stat.textContent = "Waiting for 3 captures.";
+          return;
+        }
+        const vals = arr.map((r) => r.signal);
+        const rsdText = arr.length > 1 ? `, RSD ${fmt(rsd(vals), 1)}%` : "";
+        stat.textContent = `Y ${fmt(mean(vals), 2)}${rsdText}`;
+      }
+      paintBox("p1Box", state.p1, "P1", el("tpC1").value);
+      paintBox("p2Box", state.p2, "P2", el("tpC2").value);
+    }
+
+    function fitTwoPoint() {
+      if (state.p1.length < 1 || state.p2.length < 1) {
+        alert("Capture P1 and P2 first.");
+        return;
+      }
+      if (state.p1.length < 3 || state.p2.length < 3) {
+        alert("Warning: P1 or P2 has fewer than 3 captures. The model will be marked as a field estimate.");
+      }
+      const c1 = Number(el("tpC1").value);
+      const c2 = Number(el("tpC2").value);
+      if (!Number.isFinite(c1) || !Number.isFinite(c2) || c1 === c2) {
+        alert("Enter two distinct concentrations.");
+        return;
+      }
+      const y1 = mean(state.p1.map((r) => r.signal));
+      const y2 = mean(state.p2.map((r) => r.signal));
+      const k = (y2 - y1) / (c2 - c1);
+      const b = y1 - k * c1;
+      buildModel(k, b, Math.min(c1, c2), Math.max(c1, c2), "Two-point field", null, [...state.p1, ...state.p2]);
+      if (state.p1.length < 3 || state.p2.length < 3) {
+        el("activeModelBox").classList.add("model-warn");
+        setFlag(el("modelFlag"), "Field estimate", "warn");
+      }
+    }
+
+    function captureSample() {
+      if (!state.model) {
+        alert("Activate a calibration model first.");
+        return;
+      }
+      if (!assertCaptureAllowed()) return;
+      const sig = signalFromSnapshot(state.live);
+      const conc = concentrationFromSignal(sig.mean);
+      const refValue = el("referenceConc").value === "" ? null : Number(el("referenceConc").value);
+      const spot = makeSpotRecord("Spot_" + (state.currentSpots.length + 1), "Current", refValue, sig.mean);
+      spot.estimatedConc = conc;
+      spot.outOfRange = conc < state.model.cMin || conc > state.model.cMax;
+      state.currentSpots.push(spot);
+      renderSpots();
+      updateGroupSummary();
+    }
+
+    function renderSpots() {
+      const body = el("spotRows");
+      if (!state.currentSpots.length) {
+        body.innerHTML = '<tr><td colspan="5">No spots captured.</td></tr>';
+        setFlag(el("sampleFlag"), "n=0", "warn");
+        return;
+      }
+      setFlag(el("sampleFlag"), "n=" + state.currentSpots.length, "ok");
+      body.innerHTML = state.currentSpots.map((row, i) => {
+        const flagLevel = row.outOfRange ? "warn" : row.qc === "OK" ? "ok" : "bad";
+        const text = row.outOfRange ? "Out of range" : row.qc;
+        return `<tr><td>${i + 1}</td><td>${fmt(row.signal, 3)}</td><td>${fmt(row.estimatedConc, 3)}</td><td>${fmt(row.maxSpatialSD, 2)}</td><td><span class="flag ${flagLevel === "warn" ? "warn" : flagLevel === "bad" ? "bad" : ""}">${text}</span></td></tr>`;
+      }).join("");
+    }
+
+    function updateGroupSummary() {
+      const spots = state.currentSpots;
+      const flags = [];
+      if (!spots.length) {
+        el("groupConc").textContent = "-";
+        el("groupPrecision").textContent = "-";
+        el("groupRecovery").textContent = "-";
+        el("groupConcCell").classList.remove("warn");
+        el("groupFlags").innerHTML = "";
+        return;
+      }
+      const vals = spots.map((s) => s.estimatedConc);
+      const cMean = mean(vals);
+      const cSd = sd(vals);
+      const cRsd = rsd(vals);
+      el("groupConc").textContent = fmt(cMean, 3);
+      el("groupPrecision").textContent = fmt(cSd, 3) + " / " + fmt(cRsd, 1) + "%";
+      const refValue = el("referenceConc").value === "" ? null : Number(el("referenceConc").value);
+      if (refValue && Number.isFinite(refValue)) {
+        el("groupRecovery").textContent = fmt(cMean / refValue * 100, 1) + "%";
+      } else {
+        el("groupRecovery").textContent = "-";
+      }
+      const meanOutOfRange = state.model && (cMean < state.model.cMin || cMean > state.model.cMax);
+      el("groupConcCell").classList.toggle("warn", !!meanOutOfRange);
+      if (meanOutOfRange) flags.push(["warn", "Estimated C is outside active range"]);
+      if (spots.some((s) => s.outOfRange)) flags.push(["warn", "One or more spots are out of range"]);
+      if (cRsd > Number(el("rsdLimit").value)) flags.push(["warn", "Replicate RSD exceeds threshold"]);
+      if (spots.some((s) => s.qc !== "OK")) flags.push(["bad", "One or more spots have high spatial SD"]);
+      el("groupFlags").innerHTML = flags.length
+        ? flags.map((f) => `<span class="flag ${f[0]}">${f[1]}</span>`).join("")
+        : '<span class="flag">Quality OK</span>';
+    }
+
+    function storeGroup() {
+      if (!state.currentSpots.length) {
+        alert("Capture at least one unknown spot.");
+        return;
+      }
+      state.groupCounter += 1;
+      const groupId = "Group_" + state.groupCounter;
+      const refValue = el("referenceConc").value === "" ? null : Number(el("referenceConc").value);
+      const vals = state.currentSpots.map((s) => s.estimatedConc);
+      const summary = {
+        groupId,
+        sampleId: el("sampleId").value || groupId,
+        n: state.currentSpots.length,
+        meanConc: mean(vals),
+        sdConc: sd(vals),
+        rsdPercent: rsd(vals),
+        referenceConc: refValue,
+        recoveryPercent: refValue ? mean(vals) / refValue * 100 : null,
+        meanSignal: mean(state.currentSpots.map((s) => s.signal)),
+        spots: state.currentSpots.map((s, i) => ({ ...s, group: groupId, id: groupId + "_Spot_" + (i + 1) })),
+        storedAt: new Date().toISOString()
+      };
+      state.storedGroups.push(summary);
+      state.currentSpots = [];
+      renderSpots();
+      updateGroupSummary();
+      renderStoredGroups();
+    }
+
+    function renderStoredGroups() {
+      const body = el("storedRows");
+      if (!state.storedGroups.length) {
+        body.innerHTML = '<tr><td colspan="5">No stored groups.</td></tr>';
+        return;
+      }
+      body.innerHTML = state.storedGroups.map((g) => {
+        return `<tr><td>${g.sampleId}</td><td>${g.n}</td><td>${fmt(g.meanConc, 3)}</td><td>${fmt(g.sdConc, 3)}</td><td>${g.recoveryPercent === null ? "-" : fmt(g.recoveryPercent, 1) + "%"}</td></tr>`;
+      }).join("");
+    }
+
+    function clearCurrentGroup() {
+      state.currentSpots = [];
+      renderSpots();
+      updateGroupSummary();
+    }
+
+    function clearAllGroups() {
+      state.storedGroups = [];
+      state.groupCounter = 0;
+      renderStoredGroups();
+    }
+
+    function reportRows() {
+      const model = state.model;
+      const summary = [
+        ["SMART Fe-RGB ANALYZER V2 REPORT"],
+        ["Export timestamp", new Date().toLocaleString()],
+        [],
+        ["CALIBRATION"],
+        ["Mode", model ? model.mode : "N/A"],
+        ["Sensor", model ? model.sensor : el("sensorName").value],
+        ["Signal type", model ? model.signalType : el("signalType").value],
+        ["Slope k", model ? model.k : ""],
+        ["Intercept b", model ? model.b : ""],
+        ["Equation", model ? "Y = " + model.k + "C + " + model.b : ""],
+        ["Range min", model ? model.cMin : ""],
+        ["Range max", model ? model.cMax : ""],
+        ["R2", model && model.r2 !== null ? model.r2 : ""],
+        [],
+        ["GROUP SUMMARY"],
+        ["Group ID", "Sample ID", "n", "Reference C", "Mean C", "SD", "RSD (%)", "Recovery (%)", "Mean signal"]
+      ];
+      state.storedGroups.forEach((g) => {
+        summary.push([g.groupId, g.sampleId, g.n, g.referenceConc ?? "", g.meanConc, g.sdConc, g.rsdPercent, g.recoveryPercent ?? "", g.meanSignal]);
+      });
+
+      const raw = [
+        [],
+        ["RAW ROI DATA"],
+        ["Point ID", "Group ID", "Sample ID", "Reference C", "Estimated C", "Signal", "Signal SD", "Max spatial SD", "Quality flag", "Out of range", "R mean", "R SD", "G mean", "G SD", "B mean", "B SD", "Average RGB mean", "Average RGB SD", "Luma mean", "Luma SD"]
+      ];
+      state.storedGroups.flatMap((g) => g.spots).forEach((s) => {
+        raw.push([s.id, s.group, s.sampleId, s.referenceConc ?? "", s.estimatedConc, s.signal, s.signalSD, s.maxSpatialSD, s.qc, s.outOfRange ? "yes" : "no", s.rMean, s.rSD, s.gMean, s.gSD, s.bMean, s.bSD, s.avgRGBMean, s.avgRGBSD, s.lumaMean, s.lumaSD]);
+      });
+      return [...summary, ...raw];
+    }
+
+    function rowsToTsv(rows) {
+      return rows.map((row) => row.map((cell) => {
+        const text = cell === null || cell === undefined ? "" : String(cell);
+        return text.includes("\t") || text.includes("\n") ? '"' + text.replace(/"/g, '""') + '"' : text;
+      }).join("\t")).join("\n");
+    }
+
+    function copyTsv() {
+      const text = rowsToTsv(reportRows());
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Report copied as tab-delimited text.");
+      }).catch(() => {
+        const box = document.createElement("textarea");
+        box.value = text;
+        document.body.appendChild(box);
+        box.select();
+        document.execCommand("copy");
+        box.remove();
+        alert("Report copied as tab-delimited text.");
+      });
+    }
+
+    function downloadReport() {
+      const text = rowsToTsv(reportRows());
+      const blob = new Blob([text], { type: "application/vnd.ms-excel;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "Smart_Fe_RGB_Analyzer_v2_Report.xls";
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(a.href);
+      a.remove();
+    }
+
+    function resetSession() {
+      state.model = null;
+      state.standards = [];
+      state.p1 = [];
+      state.p2 = [];
+      state.currentSpots = [];
+      state.storedGroups = [];
+      state.groupCounter = 0;
+      updateModelUI();
+      renderStandards();
+      updateTwoPointUI();
+      renderSpots();
+      updateGroupSummary();
+      renderStoredGroups();
+    }
+
+    function loadImage(file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          state.image = img;
+          state.imageLoaded = true;
+          el("placeholder").classList.add("hidden");
+          setFlag(el("imageFlag"), "Image loaded", "ok");
+          fitImageToCanvas();
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function pointerStart(x, y) {
+      if (!state.imageLoaded) return;
+      state.dragging = true;
+      state.dragX = x - state.x;
+      state.dragY = y - state.y;
+    }
+
+    function pointerMove(x, y) {
+      if (!state.dragging || !state.imageLoaded) return;
+      state.x = x - state.dragX;
+      state.y = y - state.dragY;
+      render();
+    }
+
+    function pointerEnd() {
+      state.dragging = false;
+    }
+
+    function distance(touches) {
+      return Math.sqrt(Math.pow(touches[0].clientX - touches[1].clientX, 2) + Math.pow(touches[0].clientY - touches[1].clientY, 2));
+    }
+
+    document.querySelectorAll(".segmented button").forEach((btn) => btn.addEventListener("click", () => setActiveMode(btn.dataset.mode)));
+    el("activateEquation").addEventListener("click", activateEquation);
+    el("eqSlope").addEventListener("input", updateEquationPreview);
+    el("eqIntercept").addEventListener("input", updateEquationPreview);
+    el("captureStandard").addEventListener("click", captureStandard);
+    el("clearStandards").addEventListener("click", () => { state.standards = []; renderStandards(); });
+    el("fitFullCurve").addEventListener("click", fitFullCurve);
+    el("captureP1").addEventListener("click", () => captureTwoPoint(1));
+    el("captureP2").addEventListener("click", () => captureTwoPoint(2));
+    el("tpC1").addEventListener("input", updateTwoPointUI);
+    el("tpC2").addEventListener("input", updateTwoPointUI);
+    el("fitTwoPoint").addEventListener("click", fitTwoPoint);
+    el("uploadBtn").addEventListener("click", () => el("imageInput").click());
+    el("imageInput").addEventListener("change", (e) => { if (e.target.files[0]) loadImage(e.target.files[0]); });
+    el("fitImageBtn").addEventListener("click", fitImageToCanvas);
+    el("roiSize").addEventListener("input", updateRoiSize);
+    el("signalType").addEventListener("change", () => { updateTelemetry(); updateModelUI(); });
+    el("captureSample").addEventListener("click", captureSample);
+    el("storeGroup").addEventListener("click", storeGroup);
+    el("clearCurrentGroup").addEventListener("click", clearCurrentGroup);
+    el("clearAllGroups").addEventListener("click", clearAllGroups);
+    el("copyTsv").addEventListener("click", copyTsv);
+    el("downloadReport").addEventListener("click", downloadReport);
+    el("resetAllBtn").addEventListener("click", resetSession);
+    el("referenceConc").addEventListener("input", updateGroupSummary);
+
+    wrap.addEventListener("mousedown", (e) => pointerStart(e.clientX, e.clientY));
+    window.addEventListener("mousemove", (e) => pointerMove(e.clientX, e.clientY));
+    window.addEventListener("mouseup", pointerEnd);
+    wrap.addEventListener("wheel", (e) => {
+      if (!state.imageLoaded) return;
+      e.preventDefault();
+      const oldScale = state.scale;
+      const factor = e.deltaY > 0 ? 0.92 : 1.08;
+      state.scale *= factor;
+      state.x = canvas.width / 2 - (canvas.width / 2 - state.x) * (state.scale / oldScale);
+      state.y = canvas.height / 2 - (canvas.height / 2 - state.y) * (state.scale / oldScale);
+      render();
+    }, { passive: false });
+
+    wrap.addEventListener("touchstart", (e) => {
+      if (!state.imageLoaded) return;
+      e.preventDefault();
+      if (e.touches.length === 1) pointerStart(e.touches[0].clientX, e.touches[0].clientY);
+      if (e.touches.length === 2) {
+        state.dragging = false;
+        state.lastPinch = distance(e.touches);
+      }
+    }, { passive: false });
+
+    wrap.addEventListener("touchmove", (e) => {
+      if (!state.imageLoaded) return;
+      e.preventDefault();
+      if (e.touches.length === 1) {
+        pointerMove(e.touches[0].clientX, e.touches[0].clientY);
+        return;
+      }
+      if (e.touches.length === 2) {
+        const d = distance(e.touches);
+        const oldScale = state.scale;
+        state.scale *= d / state.lastPinch;
+        state.x = canvas.width / 2 - (canvas.width / 2 - state.x) * (state.scale / oldScale);
+        state.y = canvas.height / 2 - (canvas.height / 2 - state.y) * (state.scale / oldScale);
+        state.lastPinch = d;
         render();
+      }
     }, { passive: false });
-    container.addEventListener('touchstart', (e) => {
-        if (!imgLoaded) return; isDragging = true;
-        if (e.touches.length === 1) { dragStartX = e.touches[0].clientX - imgX; dragStartY = e.touches[0].clientY - imgY; }
-        else if (e.touches.length === 2) { lastPinchDist = getDistance(e.touches); isDragging = false; }
-    });
-    container.addEventListener('touchend', () => { isDragging = false; });
-    container.addEventListener('touchmove', (e) => {
-        if (!imgLoaded) return; e.preventDefault();
-        if (e.touches.length === 1 && isDragging) { imgX = e.touches[0].clientX - dragStartX; imgY = e.touches[0].clientY - dragStartY; render(); }
-        else if (e.touches.length === 2) {
-            const newPinchDist = getDistance(e.touches); const oldScale = imgScale; imgScale *= (newPinchDist / lastPinchDist);
-            imgX = (container.clientWidth/2) - ((container.clientWidth/2) - imgX) * (imgScale / oldScale);
-            imgY = (container.clientHeight/2) - ((container.clientHeight/2) - imgY) * (imgScale / oldScale);
-            lastPinchDist = newPinchDist; render();
-        }
-    }, { passive: false });
-</script>
 
+    wrap.addEventListener("touchend", pointerEnd);
+    window.addEventListener("resize", resizeCanvas);
+
+    resizeCanvas();
+    updateRoiSize();
+    updateModelUI();
+    updateEquationPreview();
+    setFlag(el("imageFlag"), "No image", "warn");
+    renderStandards();
+    updateTwoPointUI();
+    renderSpots();
+    renderStoredGroups();
+  </script>
 </body>
 </html>
