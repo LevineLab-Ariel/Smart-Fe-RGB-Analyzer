@@ -858,10 +858,6 @@
                   <input type="number" id="rsdLimit" value="25" step="1">
                 </label>
               </div>
-              <label class="label" style="display:flex; grid-template-columns:auto 1fr; align-items:center; gap:7px;">
-                <input type="checkbox" id="blockBadRoi" checked>
-                <span>Block high-ROI-SD captures</span>
-              </label>
             </div>
           </details>
         </div>
@@ -1056,7 +1052,7 @@
       if (!snap) return { level: "bad", text: "No ROI data" };
       const limit = Number(el("spatialLimit").value);
       const maxSd = maxSpatialSD(snap);
-      if (maxSd > limit) return { level: "bad", text: "High ROI SD" };
+      if (maxSd > limit) return { level: "warn", text: "High ROI SD" };
       return { level: "ok", text: "OK" };
     }
 
@@ -1173,11 +1169,6 @@
     function assertCaptureAllowed() {
       if (!state.live) {
         alert("No valid ROI data is available.");
-        return false;
-      }
-      const flag = currentQcFlag(state.live);
-      if (flag.level === "bad" && el("blockBadRoi").checked) {
-        alert("ROI SD is above the selected warning limit.");
         return false;
       }
       return true;
@@ -1315,9 +1306,9 @@
         return;
       }
       body.innerHTML = groups.map((row) => {
-        const level = row.qc === "OK" ? "ok" : "bad";
+        const level = row.qc === "OK" ? "ok" : "warn";
         const rsdText = row.n > 1 ? fmt(row.rsdPercent, 1) + "%" : "-";
-        return `<tr><td>${fmt(row.referenceConc, 3)}</td><td>${row.n}</td><td>${fmt(row.signal, 3)}</td><td>${rsdText}</td><td><span class="flag ${level === "bad" ? "bad" : ""}">${row.qc}</span></td></tr>`;
+        return `<tr><td>${fmt(row.referenceConc, 3)}</td><td>${row.n}</td><td>${fmt(row.signal, 3)}</td><td>${rsdText}</td><td><span class="flag ${level === "warn" ? "warn" : ""}">${row.qc}</span></td></tr>`;
       }).join("");
     }
 
@@ -1433,7 +1424,7 @@
       }
       setFlag(el("sampleFlag"), "n=" + state.currentSpots.length, "ok");
       body.innerHTML = state.currentSpots.map((row, i) => {
-        const flagLevel = row.outOfRange ? "warn" : row.qc === "OK" ? "ok" : "bad";
+        const flagLevel = row.outOfRange || row.qc !== "OK" ? "warn" : "ok";
         const text = row.outOfRange ? "Out of range" : row.qc;
         return `<tr><td>${i + 1}</td><td>${fmt(row.signal, 3)}</td><td>${fmt(row.estimatedConc, 3)}</td><td>${fmt(row.maxSpatialSD, 2)}</td><td><span class="flag ${flagLevel === "warn" ? "warn" : flagLevel === "bad" ? "bad" : ""}">${text}</span></td></tr>`;
       }).join("");
@@ -1467,7 +1458,7 @@
       if (meanOutOfRange) flags.push(["warn", "Estimated C is outside active range"]);
       if (spots.some((s) => s.outOfRange)) flags.push(["warn", "One or more spots are out of range"]);
       if (cRsd > Number(el("rsdLimit").value)) flags.push(["warn", "Replicate variation above warning limit"]);
-      if (spots.some((s) => s.qc !== "OK")) flags.push(["bad", "One or more spots have high ROI SD"]);
+      if (spots.some((s) => s.qc !== "OK")) flags.push(["warn", "One or more spots have high ROI SD"]);
       el("groupFlags").innerHTML = flags.length
         ? flags.map((f) => `<span class="flag ${f[0]}">${f[1]}</span>`).join("")
         : '<span class="flag">Quality OK</span>';
