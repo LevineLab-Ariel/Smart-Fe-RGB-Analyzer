@@ -161,7 +161,7 @@
 
     .segmented {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 4px;
       padding: 4px;
       background: #e5ebf3;
@@ -173,6 +173,8 @@
       color: #445269;
       min-height: 32px;
       font-size: 12px;
+      padding-left: 6px;
+      padding-right: 6px;
     }
 
     .segmented button.active {
@@ -228,10 +230,11 @@
       gap: 8px;
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 8px 10px;
+      padding: 5px 8px;
       background: var(--surface-soft);
-      font-size: 12px;
+      font-size: 11px;
       color: var(--muted);
+      line-height: 1.2;
     }
 
     .full-capture-row {
@@ -295,6 +298,11 @@
       min-height: 14px;
     }
 
+    .mini-stat.warn {
+      color: #7a4b00;
+      font-weight: 800;
+    }
+
     .model-active { border-color: #8ab4ff; background: var(--blue-soft); }
 
     .model-warn { border-color: #efca86; background: var(--amber-soft); }
@@ -339,7 +347,7 @@
 
     .equation-action-row {
       display: grid;
-      grid-template-columns: 1fr 1fr minmax(130px, 1.15fr);
+      grid-template-columns: 1fr 1fr 0.85fr minmax(110px, 0.9fr);
       gap: 8px;
       align-items: end;
     }
@@ -493,8 +501,8 @@
 
     .table-details summary {
       cursor: pointer;
-      padding: 7px 9px;
-      font-size: 12px;
+      padding: 5px 8px;
+      font-size: 11px;
       font-weight: 800;
       color: var(--slate);
       background: var(--surface-soft);
@@ -507,6 +515,16 @@
       border: 0;
       border-top: 1px solid var(--line);
       border-radius: 0;
+    }
+
+    .table-details table {
+      font-size: 11px;
+    }
+
+    .table-details th,
+    .table-details td {
+      padding: 4px 6px;
+      line-height: 1.2;
     }
 
     table {
@@ -606,7 +624,7 @@
 
     details.advanced {
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 6px;
       background: var(--surface-soft);
       padding: 0;
       overflow: hidden;
@@ -614,20 +632,39 @@
 
     details.advanced summary {
       cursor: pointer;
-      padding: 8px 10px;
-      font-size: 12px;
+      padding: 4px 7px;
+      font-size: 10px;
       font-weight: 800;
       color: var(--slate);
       list-style: none;
+      line-height: 1.15;
     }
 
     details.advanced summary::-webkit-details-marker { display: none; }
 
     .advanced-body {
       border-top: 1px solid var(--line);
-      padding: 10px;
+      padding: 5px 6px;
       display: grid;
-      gap: 8px;
+      gap: 4px;
+    }
+
+    .advanced-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 5px;
+    }
+
+    .advanced .label {
+      font-size: 9.5px;
+      gap: 2px;
+      line-height: 1.1;
+    }
+
+    .advanced input {
+      min-height: 24px;
+      padding: 3px 5px;
+      font-size: 11px;
     }
 
     @media (max-width: 1080px) {
@@ -656,8 +693,9 @@
       h1 { font-size: 18px; white-space: nowrap; }
       .subtitle { display: none; }
       #resetAllBtn { min-height: 30px; padding: 5px 8px; font-size: 12px; }
-      .segmented { grid-template-columns: repeat(3, 1fr); }
+      .segmented { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .row, .row-3 { grid-template-columns: 1fr; }
+      .advanced-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .settings-row { grid-template-columns: 1fr 1fr; }
       .range-row,
       .sample-fields,
@@ -665,7 +703,7 @@
       .sample-result { grid-template-columns: 1fr 1fr; }
       .sample-result { grid-template-columns: repeat(3, 1fr); gap: 6px; }
       .equation-param-row { grid-template-columns: 0.95fr 1fr 1fr; }
-      .equation-action-row { grid-template-columns: 1fr 1fr minmax(105px, 1fr); }
+      .equation-action-row { grid-template-columns: 1fr 1fr 0.8fr minmax(88px, 0.8fr); }
       .full-capture-row { grid-template-columns: minmax(100px, 1fr) minmax(112px, 1fr); }
       .full-range-row { grid-template-columns: 1fr 1fr 84px; }
       .point-row { grid-template-columns: 68px 92px minmax(95px, 1fr); gap: 6px; padding: 7px; }
@@ -697,7 +735,7 @@
     <div class="topbar">
       <div class="brand">
         <h1>Smart Fe-RGB Analyzer</h1>
-        <span class="subtitle">Equation import, full calibration, field two-point modes</span>
+        <span class="subtitle">Equation import and measured-standard calibration</span>
       </div>
       <button class="btn-soft" id="resetAllBtn" type="button">Reset session</button>
     </div>
@@ -711,8 +749,7 @@
         <div class="panel-body stack">
           <div class="segmented" role="tablist" aria-label="Calibration mode">
             <button class="active" type="button" data-mode="equation">Equation</button>
-            <button type="button" data-mode="full">Full curve</button>
-            <button type="button" data-mode="twoPoint">Two-point</button>
+            <button type="button" data-mode="standards">Measured standards</button>
           </div>
 
           <div class="row settings-row">
@@ -754,11 +791,14 @@
               <label class="label">C range max
                 <input type="number" id="eqMax" value="10" step="0.01">
               </label>
+              <label class="label">R2, optional
+                <input type="number" id="eqR2" placeholder="report only" step="0.0001">
+              </label>
               <button class="btn-primary" type="button" id="activateEquation">Activate</button>
             </div>
           </div>
 
-          <div class="mode-panel" id="mode-full">
+          <div class="mode-panel" id="mode-standards">
             <div class="full-capture-row">
               <label class="label">Standard C
                 <input type="number" id="stdConc" value="0" step="0.01">
@@ -797,42 +837,9 @@
                 </table>
               </div>
             </details>
-            <button class="btn-green btn-icon" type="button" id="fitFullCurve">
+            <button class="btn-green btn-icon" type="button" id="fitStandards">
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M6 16l4-4 3 3 6-8"/></svg>
-              Fit full calibration
-            </button>
-          </div>
-
-          <div class="mode-panel" id="mode-twoPoint">
-            <div class="point-row">
-              <label class="label">P1 C
-                <input type="number" id="tpC1" value="0" step="0.01">
-              </label>
-              <button class="btn-primary btn-icon" type="button" id="captureP1">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M4 12h3"/><path d="M17 12h3"/><path d="M12 4v3"/><path d="M12 17v3"/></svg>
-                Capture P1
-              </button>
-              <div class="point-status" id="p1Box">
-                <div class="point-status-top"><b>P1</b><span class="slots"><i class="slot-pill"></i><i class="slot-pill"></i><i class="slot-pill"></i></span></div>
-                <div class="mini-stat">Waiting for 3 captures.</div>
-              </div>
-            </div>
-            <div class="point-row">
-              <label class="label">P2 C
-                <input type="number" id="tpC2" value="8.47" step="0.01">
-              </label>
-              <button class="btn-primary btn-icon" type="button" id="captureP2">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M4 12h3"/><path d="M17 12h3"/><path d="M12 4v3"/><path d="M12 17v3"/></svg>
-                Capture P2
-              </button>
-              <div class="point-status" id="p2Box">
-                <div class="point-status-top"><b>P2</b><span class="slots"><i class="slot-pill"></i><i class="slot-pill"></i><i class="slot-pill"></i></span></div>
-                <div class="mini-stat">Waiting for 3 captures.</div>
-              </div>
-            </div>
-            <button class="btn-green btn-icon" type="button" id="fitTwoPoint">
-              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l10-8"/><circle cx="7" cy="16" r="2"/><circle cx="17" cy="8" r="2"/></svg>
-              Fit two-point model
+              Fit calibration model
             </button>
           </div>
 
@@ -847,14 +854,14 @@
           <details class="advanced">
             <summary>Advanced</summary>
             <div class="advanced-body">
-              <label class="label">R2, optional
-                <input type="number" id="eqR2" placeholder="for report only" step="0.0001">
-              </label>
-              <div class="row">
+              <div class="advanced-row">
                 <label class="label">ROI SD warning
                   <input type="number" id="spatialLimit" value="40" step="1">
                 </label>
-                <label class="label">Replicate RSD warning (%)
+                <label class="label">Calibration RSD warning (%)
+                  <input type="number" id="calRsdLimit" value="15" step="1">
+                </label>
+                <label class="label">Sample RSD warning (%)
                   <input type="number" id="rsdLimit" value="25" step="1">
                 </label>
               </div>
@@ -997,8 +1004,6 @@
       live: null,
       model: null,
       standards: [],
-      p1: [],
-      p2: [],
       currentSpots: [],
       storedGroups: [],
       groupCounter: 0
@@ -1068,7 +1073,7 @@
       });
       document.querySelectorAll(".mode-panel").forEach((panel) => panel.classList.remove("active"));
       el("mode-" + mode).classList.add("active");
-      el("activeMode").textContent = mode === "equation" ? "Equation import" : mode === "full" ? "Full calibration" : "Two-point field";
+      el("activeMode").textContent = mode === "equation" ? "Equation import" : "Measured standards";
     }
 
     function updateRoiSize() {
@@ -1103,7 +1108,7 @@
         updateTelemetry();
         return;
       }
-      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingEnabled = false;
       ctx.drawImage(state.image, state.x, state.y, state.image.width * state.scale, state.image.height * state.scale);
       processRoi();
     }
@@ -1199,6 +1204,7 @@
         el("activeEquation").textContent = "None";
         el("activeRange").textContent = "-";
         setFlag(el("modelFlag"), "No model", "bad");
+        el("captureSample").disabled = true;
         return;
       }
       box.classList.add("model-active");
@@ -1209,6 +1215,7 @@
       el("activeRange").textContent = fmt(m.cMin, 2) + " to " + fmt(m.cMax, 2);
       el("activeMode").textContent = m.mode;
       setFlag(el("modelFlag"), "Model active", "ok");
+      el("captureSample").disabled = false;
     }
 
     function updateEquationPreview() {
@@ -1280,15 +1287,18 @@
       return [...map.entries()].map(([key, rows]) => {
         const signals = rows.map((r) => r.signal);
         const maxSd = Math.max(...rows.map((r) => r.maxSpatialSD));
-        const hasBad = rows.some((r) => r.qc !== "OK");
+        const flags = [];
+        if (rows.some((r) => r.qc !== "OK")) flags.push("High ROI SD");
+        const signalRsd = rsd(signals);
+        if (rows.length > 1 && signalRsd > Number(el("calRsdLimit").value)) flags.push("High RSD");
         return {
           referenceConc: Number(key),
           n: rows.length,
           signal: mean(signals),
           signalSD: sd(signals),
-          rsdPercent: rsd(signals),
+          rsdPercent: signalRsd,
           maxSpatialSD: maxSd,
-          qc: hasBad ? "Check" : "OK",
+          qc: flags.length ? flags.join("; ") : "OK",
           rows
         };
       }).sort((a, b) => a.referenceConc - b.referenceConc);
@@ -1327,7 +1337,7 @@
       return { k, b, r2 };
     }
 
-    function fitFullCurve() {
+    function fitStandards() {
       const groups = groupedStandards();
       if (groups.length < 2) {
         alert("Capture at least two concentration levels.");
@@ -1340,61 +1350,12 @@
       }
       const cMin = Number(el("fullMin").value);
       const cMax = Number(el("fullMax").value) || Math.max(...groups.map((r) => r.referenceConc));
-      buildModel(fit.k, fit.b, Number.isFinite(cMin) ? cMin : Math.min(...groups.map((r) => r.referenceConc)), cMax, "Full calibration", fit.r2, state.standards);
+      const modeLabel = groups.length === 2 ? "Measured standards (2 levels)" : "Measured standards";
+      buildModel(fit.k, fit.b, Number.isFinite(cMin) ? cMin : Math.min(...groups.map((r) => r.referenceConc)), cMax, modeLabel, fit.r2, state.standards);
       el("fullCurveStatus").textContent = `Y = ${fmt(fit.k, 4)}C ${fit.b < 0 ? "-" : "+"} ${fmt(Math.abs(fit.b), 3)}${fit.r2 === null ? "" : ", R2 = " + fmt(fit.r2, 4)}`;
-    }
-
-    function captureTwoPoint(which) {
-      if (!assertCaptureAllowed()) return;
-      const sig = signalFromSnapshot(state.live);
-      const arr = which === 1 ? state.p1 : state.p2;
-      if (arr.length >= 3) arr.length = 0;
-      arr.push(makeSpotRecord(which === 1 ? "P1_" + arr.length : "P2_" + arr.length, which === 1 ? "P1" : "P2", which === 1 ? Number(el("tpC1").value) : Number(el("tpC2").value), sig.mean));
-      updateTwoPointUI();
-    }
-
-    function updateTwoPointUI() {
-      function paintBox(boxId, arr, label, concValue) {
-        const box = el(boxId);
-        const slots = box.querySelectorAll(".slot-pill");
-        slots.forEach((slot, index) => slot.classList.toggle("filled", index < arr.length));
-        const stat = box.querySelector(".mini-stat");
-        const title = box.querySelector("b");
-        title.textContent = `${label} C=${concValue}`;
-        if (!arr.length) {
-          stat.textContent = "Waiting for 3 captures.";
-          return;
-        }
-        const vals = arr.map((r) => r.signal);
-        const rsdText = arr.length > 1 ? `, RSD ${fmt(rsd(vals), 1)}%` : "";
-        stat.textContent = `Y ${fmt(mean(vals), 2)}${rsdText}`;
-      }
-      paintBox("p1Box", state.p1, "P1", el("tpC1").value);
-      paintBox("p2Box", state.p2, "P2", el("tpC2").value);
-    }
-
-    function fitTwoPoint() {
-      if (state.p1.length < 1 || state.p2.length < 1) {
-        alert("Capture P1 and P2 first.");
-        return;
-      }
-      if (state.p1.length < 3 || state.p2.length < 3) {
-        alert("Warning: P1 or P2 has fewer than 3 captures. The model will be marked as a field estimate.");
-      }
-      const c1 = Number(el("tpC1").value);
-      const c2 = Number(el("tpC2").value);
-      if (!Number.isFinite(c1) || !Number.isFinite(c2) || c1 === c2) {
-        alert("Enter two distinct concentrations.");
-        return;
-      }
-      const y1 = mean(state.p1.map((r) => r.signal));
-      const y2 = mean(state.p2.map((r) => r.signal));
-      const k = (y2 - y1) / (c2 - c1);
-      const b = y1 - k * c1;
-      buildModel(k, b, Math.min(c1, c2), Math.max(c1, c2), "Two-point field", null, [...state.p1, ...state.p2]);
-      if (state.p1.length < 3 || state.p2.length < 3) {
+      if (groups.some((r) => r.qc !== "OK")) {
         el("activeModelBox").classList.add("model-warn");
-        setFlag(el("modelFlag"), "Field estimate", "warn");
+        setFlag(el("modelFlag"), "Calibration warning", "warn");
       }
     }
 
@@ -1607,14 +1568,11 @@
       if (!confirm("Reset the full session and clear all captured data?")) return;
       state.model = null;
       state.standards = [];
-      state.p1 = [];
-      state.p2 = [];
       state.currentSpots = [];
       state.storedGroups = [];
       state.groupCounter = 0;
       updateModelUI();
       renderStandards();
-      updateTwoPointUI();
       renderSpots();
       updateGroupSummary();
       renderStoredGroups();
@@ -1664,12 +1622,7 @@
     el("eqIntercept").addEventListener("input", updateEquationPreview);
     el("captureStandard").addEventListener("click", captureStandard);
     el("clearStandards").addEventListener("click", () => { state.standards = []; renderStandards(); });
-    el("fitFullCurve").addEventListener("click", fitFullCurve);
-    el("captureP1").addEventListener("click", () => captureTwoPoint(1));
-    el("captureP2").addEventListener("click", () => captureTwoPoint(2));
-    el("tpC1").addEventListener("input", updateTwoPointUI);
-    el("tpC2").addEventListener("input", updateTwoPointUI);
-    el("fitTwoPoint").addEventListener("click", fitTwoPoint);
+    el("fitStandards").addEventListener("click", fitStandards);
     el("uploadBtn").addEventListener("click", () => el("imageInput").click());
     el("imageInput").addEventListener("change", (e) => { if (e.target.files[0]) loadImage(e.target.files[0]); });
     el("fitImageBtn").addEventListener("click", fitImageToCanvas);
@@ -1735,7 +1688,6 @@
     updateEquationPreview();
     setFlag(el("imageFlag"), "No image", "warn");
     renderStandards();
-    updateTwoPointUI();
     renderSpots();
     renderStoredGroups();
   </script>
