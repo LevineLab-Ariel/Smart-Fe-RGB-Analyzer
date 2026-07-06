@@ -427,7 +427,7 @@
     .telemetry {
       padding: 12px;
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
       gap: 8px;
       border-top: 1px solid var(--line);
     }
@@ -438,6 +438,7 @@
       padding: 8px;
       background: #fff;
       min-width: 0;
+      text-align: center;
     }
 
     .metric b {
@@ -447,7 +448,14 @@
       margin-bottom: 5px;
     }
 
-    .metric span {
+    .signal-type-tag {
+      margin-left: 3px;
+      font-size: 10px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .metric > span {
       font-size: 15px;
       font-weight: 800;
       word-break: break-word;
@@ -459,6 +467,207 @@
       color: var(--muted);
       font-size: 10px;
     }
+
+    .rgb-table {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      justify-items: center;
+      align-items: baseline;
+      position: relative;
+      width: 100%;
+      box-sizing: border-box;
+      row-gap: 2px;
+      column-gap: 12px;
+      line-height: 1.15;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rgb-value {
+      font-size: 15px;
+      font-weight: 800;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .rgb-sd-value {
+      font-size: 9.5px;
+      font-weight: 800;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .rgb-sd-label {
+      position: absolute;
+      left: clamp(0px, calc(16.667% - 36px), 22px);
+      bottom: 0.02em;
+      color: var(--muted);
+      font-size: 9.5px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .metric .signal-value {
+      display: block;
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 1.15;
+      text-align: center;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric .signal-sd {
+      display: block;
+      margin-top: 3px;
+      font-size: 9.5px;
+      font-weight: 800;
+      line-height: 1.15;
+      text-align: center;
+      white-space: nowrap;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rgb-empty {
+      display: inline-block;
+      width: 24px;
+      height: 1em;
+      position: relative;
+    }
+
+    .rgb-empty::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 0.18em;
+      width: 22px;
+      height: 2px;
+      border-radius: 999px;
+      background: currentColor;
+      opacity: 0.62;
+      transform: translateX(-50%);
+    }
+
+    .channel-red { color: #c83232; }
+    .channel-green { color: #168456; }
+    .channel-blue { color: #2864d8; }
+    .channel-sep {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .metric small.channel-red { color: #c83232; }
+    .metric small.channel-green { color: #168456; }
+    .metric small.channel-blue { color: #2864d8; }
+    .metric .signal-sd.channel-red { color: #c83232; }
+    .metric .signal-sd.channel-green { color: #168456; }
+    .metric .signal-sd.channel-blue { color: #2864d8; }
+
+    .rgb-bars {
+      margin: -4px 12px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .rgb-bars summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      list-style: none;
+      padding: 6px 9px;
+      background: var(--surface-soft);
+      color: var(--slate);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .rgb-bars summary::after {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      transition: transform 120ms ease;
+      flex: 0 0 auto;
+      margin-left: 2px;
+      margin-top: -2px;
+    }
+
+    .rgb-bars[open] summary::after {
+      transform: rotate(-135deg);
+      margin-top: 3px;
+    }
+
+    .rgb-bars summary::-webkit-details-marker { display: none; }
+
+    .rgb-bars summary span:last-child {
+      margin-left: auto;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .rgb-bars-body {
+      display: grid;
+      gap: 5px;
+      padding: 7px 9px 8px;
+    }
+
+    .rgb-bar-row {
+      display: grid;
+      grid-template-columns: 58px minmax(0, 1fr) 44px;
+      gap: 7px;
+      align-items: center;
+      font-size: 11px;
+    }
+
+    .rgb-bar-name {
+      font-weight: 900;
+      color: var(--slate);
+    }
+
+    .rgb-bar-name.red { color: #c83232; }
+    .rgb-bar-name.green { color: #168456; }
+    .rgb-bar-name.blue { color: #2864d8; }
+
+    .rgb-track {
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #e9eef5;
+      box-shadow: inset 0 0 0 1px rgba(120, 134, 154, 0.18);
+    }
+
+    .rgb-fill {
+      display: block;
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      transition: width 120ms ease;
+    }
+
+    .rgb-fill.red { background: linear-gradient(90deg, #f5b5b5, #e03b3b); }
+    .rgb-fill.green { background: linear-gradient(90deg, #aee8c8, #16945e); }
+    .rgb-fill.blue { background: linear-gradient(90deg, #aec8ff, #2864e8); }
+    .rgb-fill.signal { background: linear-gradient(90deg, #c8d5e6, #24364d); }
+    .rgb-fill.signal.red { background: linear-gradient(90deg, #f5b5b5, #e03b3b); }
+    .rgb-fill.signal.green { background: linear-gradient(90deg, #aee8c8, #16945e); }
+    .rgb-fill.signal.blue { background: linear-gradient(90deg, #aec8ff, #2864e8); }
+
+    .rgb-bar-value {
+      text-align: right;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .rgb-bar-value.channel-red { color: #c83232; }
+    .rgb-bar-value.channel-green { color: #168456; }
+    .rgb-bar-value.channel-blue { color: #2864d8; }
 
     .qc {
       display: grid;
@@ -631,6 +840,10 @@
     }
 
     details.advanced summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
       cursor: pointer;
       padding: 4px 7px;
       font-size: 10px;
@@ -638,6 +851,23 @@
       color: var(--slate);
       list-style: none;
       line-height: 1.15;
+    }
+
+    details.advanced summary::after {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      transition: transform 120ms ease;
+      flex: 0 0 auto;
+      margin-top: -2px;
+    }
+
+    details.advanced[open] summary::after {
+      transform: rotate(-135deg);
+      margin-top: 3px;
     }
 
     details.advanced summary::-webkit-details-marker { display: none; }
@@ -673,7 +903,7 @@
       .canvas-panel { min-height: 0; order: -2; }
       .samples-panel { order: -1; }
       .canvas-wrap { height: 360px; }
-      .telemetry { grid-template-columns: repeat(2, 1fr); }
+      .telemetry { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); }
     }
 
     @media (max-width: 560px) {
@@ -717,8 +947,13 @@
       .telemetry { padding: 8px; gap: 6px; }
       .metric { padding: 6px; }
       .metric b { font-size: 10px; margin-bottom: 3px; }
-      .metric span { font-size: 13px; }
+      .metric > span { font-size: 13px; }
       .metric small { font-size: 9px; }
+      .rgb-bars { margin: -2px 8px 8px; }
+      .rgb-bars summary { padding: 5px 7px; font-size: 10px; }
+      .rgb-bars-body { gap: 4px; padding: 6px 7px 7px; }
+      .rgb-bar-row { grid-template-columns: 48px minmax(0, 1fr) 38px; gap: 6px; font-size: 10px; }
+      .rgb-track { height: 7px; }
       .result-cell { padding: 6px; }
       .result-cell b { font-size: 9px; margin-bottom: 2px; }
       .result-cell span { font-size: 12px; }
@@ -895,9 +1130,34 @@
         </div>
         <input type="file" id="imageInput" accept="image/*" class="hidden">
         <div class="telemetry">
-          <div class="metric"><b>RGB</b><span id="rgbTriple">-, -, -</span><small id="rgbTripleSd">SD -, -, -</small></div>
-          <div class="metric"><b>Signal</b><span id="signalMean">-</span><small id="signalSd">SD -</small></div>
+          <div class="metric"><b>RGB</b><div class="rgb-table"><span id="rgbRMean" class="rgb-value channel-red rgb-empty"></span><span id="rgbGMean" class="rgb-value channel-green rgb-empty"></span><span id="rgbBMean" class="rgb-value channel-blue rgb-empty"></span><span class="rgb-sd-label">SD</span><span id="rgbRSd" class="rgb-sd-value channel-red rgb-empty"></span><span id="rgbGSd" class="rgb-sd-value channel-green rgb-empty"></span><span id="rgbBSd" class="rgb-sd-value channel-blue rgb-empty"></span></div></div>
+          <div class="metric"><b>Signal<span id="signalTypeTag" class="signal-type-tag">(Avg RGB)</span></b><span id="signalMean" class="signal-value">-</span><small id="signalSd" class="signal-sd">SD -</small></div>
         </div>
+        <details class="rgb-bars">
+          <summary><span>RGB bars</span><span class="mono">0-255</span></summary>
+          <div class="rgb-bars-body">
+            <div class="rgb-bar-row">
+              <b class="rgb-bar-name red">R</b>
+              <div class="rgb-track"><span class="rgb-fill red" id="barRFill"></span></div>
+              <span class="rgb-bar-value channel-red" id="barRVal">-</span>
+            </div>
+            <div class="rgb-bar-row">
+              <b class="rgb-bar-name green">G</b>
+              <div class="rgb-track"><span class="rgb-fill green" id="barGFill"></span></div>
+              <span class="rgb-bar-value channel-green" id="barGVal">-</span>
+            </div>
+            <div class="rgb-bar-row">
+              <b class="rgb-bar-name blue">B</b>
+              <div class="rgb-track"><span class="rgb-fill blue" id="barBFill"></span></div>
+              <span class="rgb-bar-value channel-blue" id="barBVal">-</span>
+            </div>
+            <div class="rgb-bar-row">
+              <b class="rgb-bar-name" id="barSignalName">Signal</b>
+              <div class="rgb-track"><span class="rgb-fill signal" id="barSignalFill"></span></div>
+              <span class="rgb-bar-value" id="barSignalVal">-</span>
+            </div>
+          </div>
+        </details>
         <div class="qc" id="roiQc">
           <span>ROI status: waiting for image.</span>
           <span class="mono">-</span>
@@ -1034,14 +1294,24 @@
       return Number(value).toFixed(digits);
     }
 
+    function selectedSignalMeta() {
+      const type = el("signalType").value;
+      if (type === "r") return { label: "R", shortLabel: "R" };
+      if (type === "g") return { label: "G", shortLabel: "G" };
+      if (type === "b") return { label: "B", shortLabel: "B" };
+      if (type === "luma") return { label: "Luma Y", shortLabel: "Luma" };
+      return { label: "Average RGB", shortLabel: "Avg RGB" };
+    }
+
     function signalFromSnapshot(snap) {
       if (!snap) return null;
       const type = el("signalType").value;
-      if (type === "r") return { mean: snap.rMean, sd: snap.rSD, label: "R" };
-      if (type === "g") return { mean: snap.gMean, sd: snap.gSD, label: "G" };
-      if (type === "b") return { mean: snap.bMean, sd: snap.bSD, label: "B" };
-      if (type === "luma") return { mean: snap.lumaMean, sd: snap.lumaSD, label: "Luma Y" };
-      return { mean: snap.avgRGBMean, sd: snap.avgRGBSD, label: "Average RGB" };
+      const meta = selectedSignalMeta();
+      if (type === "r") return { mean: snap.rMean, sd: snap.rSD, label: meta.label };
+      if (type === "g") return { mean: snap.gMean, sd: snap.gSD, label: meta.label };
+      if (type === "b") return { mean: snap.bMean, sd: snap.bSD, label: meta.label };
+      if (type === "luma") return { mean: snap.lumaMean, sd: snap.lumaSD, label: meta.label };
+      return { mean: snap.avgRGBMean, sd: snap.avgRGBSD, label: meta.label };
     }
 
     function maxSpatialSD(snap) {
@@ -1059,6 +1329,62 @@
       const maxSd = maxSpatialSD(snap);
       if (maxSd > limit) return { level: "warn", text: "High ROI SD" };
       return { level: "ok", text: "OK" };
+    }
+
+    function channelClass(label) {
+      if (label === "R") return "channel-red";
+      if (label === "G") return "channel-green";
+      if (label === "B") return "channel-blue";
+      return "";
+    }
+
+    function channelFillClass(label) {
+      if (label === "R") return "red";
+      if (label === "G") return "green";
+      if (label === "B") return "blue";
+      return "";
+    }
+
+    function setRgbGridValue(id, value, digits) {
+      const node = el(id);
+      if (value === null || value === undefined || Number.isNaN(value)) {
+        node.textContent = "";
+        node.classList.add("rgb-empty");
+        return;
+      }
+      node.classList.remove("rgb-empty");
+      node.textContent = fmt(value, digits);
+    }
+
+    function setIntensityBar(fillId, valueId, value) {
+      const fill = el(fillId);
+      const valueNode = el(valueId);
+      if (value === null || value === undefined || Number.isNaN(value)) {
+        fill.style.width = "0%";
+        fill.setAttribute("aria-valuenow", "0");
+        valueNode.textContent = "-";
+        return;
+      }
+      const clamped = Math.max(0, Math.min(255, Number(value)));
+      fill.style.width = (clamped / 255 * 100).toFixed(1) + "%";
+      fill.setAttribute("aria-valuenow", clamped.toFixed(1));
+      valueNode.textContent = fmt(value, 1);
+    }
+
+    function updateRgbBars(snap, sig) {
+      setIntensityBar("barRFill", "barRVal", snap ? snap.rMean : null);
+      setIntensityBar("barGFill", "barGVal", snap ? snap.gMean : null);
+      setIntensityBar("barBFill", "barBVal", snap ? snap.bMean : null);
+      const signalName = el("barSignalName");
+      const shortLabel = sig && sig.label === "Average RGB" ? "Avg RGB" : sig && sig.label === "Luma Y" ? "Luma" : sig ? sig.label : "Signal";
+      const fillClass = sig ? channelFillClass(sig.label) : "";
+      const textClass = sig ? channelClass(sig.label) : "";
+      signalName.textContent = shortLabel;
+      signalName.title = sig ? sig.label : "Signal";
+      signalName.className = "rgb-bar-name" + (fillClass ? " " + fillClass : "");
+      el("barSignalFill").className = "rgb-fill signal" + (fillClass ? " " + fillClass : "");
+      el("barSignalVal").className = "rgb-bar-value" + (textClass ? " " + textClass : "");
+      setIntensityBar("barSignalFill", "barSignalVal", sig ? sig.mean : null);
     }
 
     function setFlag(node, text, level = "ok") {
@@ -1152,10 +1478,28 @@
     function updateTelemetry() {
       const snap = state.live;
       const sig = signalFromSnapshot(snap);
-      el("rgbTriple").textContent = snap ? `${fmt(snap.rMean, 1)}, ${fmt(snap.gMean, 1)}, ${fmt(snap.bMean, 1)}` : "-, -, -";
-      el("rgbTripleSd").textContent = snap ? `SD ${fmt(snap.rSD, 1)}, ${fmt(snap.gSD, 1)}, ${fmt(snap.bSD, 1)}` : "SD -, -, -";
+      const meta = selectedSignalMeta();
+      const metaClass = channelClass(meta.label);
+      el("signalTypeTag").className = "signal-type-tag" + (metaClass ? " " + metaClass : "");
+      el("signalTypeTag").textContent = `(${meta.shortLabel})`;
+      if (snap) {
+        setRgbGridValue("rgbRMean", snap.rMean, 1);
+        setRgbGridValue("rgbGMean", snap.gMean, 1);
+        setRgbGridValue("rgbBMean", snap.bMean, 1);
+        setRgbGridValue("rgbRSd", snap.rSD, 1);
+        setRgbGridValue("rgbGSd", snap.gSD, 1);
+        setRgbGridValue("rgbBSd", snap.bSD, 1);
+      } else {
+        ["rgbRMean", "rgbGMean", "rgbBMean", "rgbRSd", "rgbGSd", "rgbBSd"].forEach((id) => setRgbGridValue(id, null, 1));
+      }
+      const sigClass = sig ? channelClass(sig.label) : "";
+      el("signalMean").className = "signal-value" + (sigClass ? " " + sigClass : "");
       el("signalMean").textContent = sig ? fmt(sig.mean, 2) : "-";
-      el("signalSd").textContent = sig ? sig.label + " SD " + fmt(sig.sd, 2) : "SD -";
+      el("signalMean").title = sig ? sig.label : "Signal";
+      el("signalSd").className = "signal-sd" + (sigClass ? " " + sigClass : "");
+      el("signalSd").textContent = sig ? "SD " + fmt(sig.sd, 2) : "SD -";
+      el("signalSd").title = sig ? sig.label + " SD" : "Signal SD";
+      updateRgbBars(snap, sig);
 
       const qc = el("roiQc");
       if (!snap) {
@@ -1565,17 +1909,32 @@
     }
 
     function resetSession() {
-      if (!confirm("Reset the full session and clear all captured data?")) return;
+      if (!confirm("Reset the full session, including the image, calibration model, and captured data?")) return;
       state.model = null;
       state.standards = [];
       state.currentSpots = [];
       state.storedGroups = [];
       state.groupCounter = 0;
+      clearImage();
       updateModelUI();
       renderStandards();
       renderSpots();
       updateGroupSummary();
       renderStoredGroups();
+    }
+
+    function clearImage() {
+      state.image = null;
+      state.imageLoaded = false;
+      state.live = null;
+      state.dragging = false;
+      state.scale = 1;
+      state.x = 0;
+      state.y = 0;
+      el("imageInput").value = "";
+      el("placeholder").classList.remove("hidden");
+      setFlag(el("imageFlag"), "No image", "ok");
+      render();
     }
 
     function loadImage(file) {
